@@ -18,25 +18,30 @@ import java.util.Random;
 
 public class HelloApplication extends Application {
     private static final double WIDTH = 400, HEIGHT = 600;
+
+    // Physics / rendering constants (real units)
+    private final double GRAVITY = 1000.0;       // px / s^2
+    private final double JUMP_VELOCITY = -350.0; // px / s
+    private final double SCROLL_SPEED = 150.0;   // px / s
+    private final double SPAWN_INTERVAL = 1.2;   // seconds
+
+    // Fixed timestep config
+    private static final double FIXED_DT = 1.0 / 60.0; // seconds per physics step
+    private static final double MAX_ACCUM = 0.25;      // clamp large frame gaps
+
+    private Pane root;
     private Circle player;
     private double velocity = 0;
-    // Units changed: pixels / second^2
-    private final double GRAVITY = 1000.0;
-    // Units changed: pixels / second (negative = up)
-    private final double JUMP_VELOCITY = -350.0;
     private final ArrayList<Rectangle[]> pipes = new ArrayList<>();
-    private Pane root;
-    private long lastSpawn = 0;
-    private final long SPAWN_INTERVAL = 1_200_000_000L; // nanoseconds (1.2s)
-    // Units changed: pixels / second
-    private double scrollSpeed = 150.0;
     private Text scoreText;
     private int score = 0;
     private final Random rand = new Random();
     private boolean running = true;
 
-    // time tracking for frame-independent update
+    // loop state
     private long prevTime = 0;
+    private double accumulator = 0.0;
+    private double spawnTimer = SPAWN_INTERVAL;
 
     @Override
     public void start(Stage primaryStage) {
@@ -65,67 +70,75 @@ public class HelloApplication extends Application {
         });
 
         primaryStage.setScene(scene);
-        primaryStage.setTitle("Flappy-like (JavaFX)");
+        primaryStage.setTitle("Flappy-like (JavaFX) - Fixed Timestep");
         primaryStage.show();
 
         AnimationTimer loop = new AnimationTimer() {
             @Override
             public void handle(long now) {
-                // initialize timers on first frame to avoid huge dt
-                if (prevTime == 0) {
+                if (prevTime == 0) { // initialize to avoid huge initial dt
                     prevTime = now;
-                    lastSpawn = now;
                     return;
                 }
+
                 if (!running) {
-                    prevTime = now; // keep timers in sync when paused
+                    prevTime = now; // keep timers in sync while paused
                     return;
                 }
-                double dt = (now - prevTime) / 1_000_000_000.0; // seconds
+
+                double frameDt = (now - prevTime) / 1_000_000_000.0;
                 prevTime = now;
-                update(now, dt);
+
+                // clamp large frame times (e.g., after pause or window drag)
+                frameDt = Math.min(frameDt, MAX_ACCUM);
+                accumulator += frameDt;
+
+                // run fixed-size physics steps
+                while (accumulator >= FIXED_DT) {
+                    physicsUpdate(FIXED_DT);
+                    accumulator -= FIXED_DT;
+                }
+
+                // rendering can simply reflect current state (no complex interpolation here)
+                // nodes are updated inside physicsUpdate
             }
         };
         loop.start();
     }
 
-    private void jump() {
-        velocity = JUMP_VELOCITY;
-    }
-
-    private void update(long now, double dt) {
-        // Physics (time-based)
+    private void physicsUpdate(double dt) {
+        // Apply gravity and integrate position
         velocity += GRAVITY * dt;
         player.setTranslateY(player.getTranslateY() + velocity * dt);
 
-        // Spawn pipes
-        if (now - lastSpawn > SPAWN_INTERVAL) {
+        // Spawn logic using a timer in seconds (deterministic with fixed steps)
+        spawnTimer -= dt;
+        if (spawnTimer <= 0) {
             spawnPipes();
-            lastSpawn = now;
+            spawnTimer += SPAWN_INTERVAL;
         }
 
-        // Move pipes and check collision & scoring
+        // Move pipes and handle scoring/collision/removal
         Iterator<Rectangle[]> it = pipes.iterator();
         while (it.hasNext()) {
             Rectangle[] pair = it.next();
             Rectangle top = pair[0], bottom = pair[1];
-            top.setTranslateX(top.getTranslateX() - scrollSpeed * dt);
-            bottom.setTranslateX(bottom.getTranslateX() - scrollSpeed * dt);
 
-            // Scoring: when pipe passes player
+            double dx = SCROLL_SPEED * dt;
+            top.setTranslateX(top.getTranslateX() - dx);
+            bottom.setTranslateX(bottom.getTranslateX() - dx);
+
             if (!top.getProperties().containsKey("scored") && top.getTranslateX() + top.getWidth() < player.getTranslateX()) {
                 top.getProperties().put("scored", true);
                 score++;
                 scoreText.setText("Score: " + score);
             }
 
-            // Collision
             if (player.getBoundsInParent().intersects(top.getBoundsInParent()) ||
                     player.getBoundsInParent().intersects(bottom.getBoundsInParent())) {
                 gameOver();
             }
 
-            // Remove off-screen
             if (top.getTranslateX() + top.getWidth() < -50) {
                 root.getChildren().removeAll(top, bottom);
                 it.remove();
@@ -136,6 +149,10 @@ public class HelloApplication extends Application {
         if (player.getTranslateY() - player.getRadius() < 0 || player.getTranslateY() + player.getRadius() > HEIGHT) {
             gameOver();
         }
+    }
+
+    private void jump() {
+        velocity = JUMP_VELOCITY;
     }
 
     private void spawnPipes() {
@@ -167,7 +184,6 @@ public class HelloApplication extends Application {
     }
 
     private void restart() {
-        // reset
         root.getChildren().clear();
         pipes.clear();
         player.setTranslateX(100);
@@ -177,9 +193,11 @@ public class HelloApplication extends Application {
         scoreText.setText("Score: 0");
         root.getChildren().addAll(player, scoreText);
         running = true;
-        // reset timers to avoid a large immediate dt/spawn
+
+        // reset loop state
         prevTime = 0;
-        lastSpawn = System.nanoTime();
+        accumulator = 0.0;
+        spawnTimer = SPAWN_INTERVAL;
     }
 
     public static void main(String[] args) {
