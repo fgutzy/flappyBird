@@ -1,6 +1,5 @@
 package org.example.flappybird;
 
-// FlappyGame.java
 import javafx.animation.AnimationTimer;
 import javafx.application.Application;
 import javafx.scene.Scene;
@@ -21,17 +20,23 @@ public class HelloApplication extends Application {
     private static final double WIDTH = 400, HEIGHT = 600;
     private Circle player;
     private double velocity = 0;
-    private final double GRAVITY = 0.35;
-    private final double JUMP_VELOCITY = -7.5;
+    // Units changed: pixels / second^2
+    private final double GRAVITY = 1000.0;
+    // Units changed: pixels / second (negative = up)
+    private final double JUMP_VELOCITY = -350.0;
     private final ArrayList<Rectangle[]> pipes = new ArrayList<>();
     private Pane root;
     private long lastSpawn = 0;
     private final long SPAWN_INTERVAL = 1_200_000_000L; // nanoseconds (1.2s)
-    private double scrollSpeed = 2.5;
+    // Units changed: pixels / second
+    private double scrollSpeed = 150.0;
     private Text scoreText;
     private int score = 0;
     private final Random rand = new Random();
     private boolean running = true;
+
+    // time tracking for frame-independent update
+    private long prevTime = 0;
 
     @Override
     public void start(Stage primaryStage) {
@@ -66,8 +71,19 @@ public class HelloApplication extends Application {
         AnimationTimer loop = new AnimationTimer() {
             @Override
             public void handle(long now) {
-                if (!running) return;
-                update(now);
+                // initialize timers on first frame to avoid huge dt
+                if (prevTime == 0) {
+                    prevTime = now;
+                    lastSpawn = now;
+                    return;
+                }
+                if (!running) {
+                    prevTime = now; // keep timers in sync when paused
+                    return;
+                }
+                double dt = (now - prevTime) / 1_000_000_000.0; // seconds
+                prevTime = now;
+                update(now, dt);
             }
         };
         loop.start();
@@ -77,10 +93,10 @@ public class HelloApplication extends Application {
         velocity = JUMP_VELOCITY;
     }
 
-    private void update(long now) {
-        // Physics
-        velocity += GRAVITY;
-        player.setTranslateY(player.getTranslateY() + velocity);
+    private void update(long now, double dt) {
+        // Physics (time-based)
+        velocity += GRAVITY * dt;
+        player.setTranslateY(player.getTranslateY() + velocity * dt);
 
         // Spawn pipes
         if (now - lastSpawn > SPAWN_INTERVAL) {
@@ -93,15 +109,14 @@ public class HelloApplication extends Application {
         while (it.hasNext()) {
             Rectangle[] pair = it.next();
             Rectangle top = pair[0], bottom = pair[1];
-            top.setTranslateX(top.getTranslateX() - scrollSpeed);
-            bottom.setTranslateX(bottom.getTranslateX() - scrollSpeed);
+            top.setTranslateX(top.getTranslateX() - scrollSpeed * dt);
+            bottom.setTranslateX(bottom.getTranslateX() - scrollSpeed * dt);
 
             // Scoring: when pipe passes player
             if (!top.getProperties().containsKey("scored") && top.getTranslateX() + top.getWidth() < player.getTranslateX()) {
                 top.getProperties().put("scored", true);
                 score++;
                 scoreText.setText("Score: " + score);
-                // optional: add visual feedback
             }
 
             // Collision
@@ -162,7 +177,9 @@ public class HelloApplication extends Application {
         scoreText.setText("Score: 0");
         root.getChildren().addAll(player, scoreText);
         running = true;
-        lastSpawn = 0;
+        // reset timers to avoid a large immediate dt/spawn
+        prevTime = 0;
+        lastSpawn = System.nanoTime();
     }
 
     public static void main(String[] args) {
