@@ -28,17 +28,21 @@ public class HelloApplication extends Application {
     // Physics / rendering constants (real units)
     private final double GRAVITY = 1000.0;       // px / s^2
     private final double JUMP_VELOCITY = -350.0; // px / s
-    private final double SCROLL_SPEED = 200.0;   // px / s (increased from 150)
+    private final double SCROLL_SPEED = 200.0;   // px / s
     private final double SPAWN_INTERVAL = 1.2;   // seconds
-    private final double HITBOX_SCALE = 0.95;    // collision radius scale (increased from 0.7)
+    private final double HITBOX_SCALE = 0.95;    // collision radius scale
 
     // Fixed timestep config
+    // todo: understand these constants better
     private static final double FIXED_DT = 1.0 / 60.0; // seconds per physics step
     private static final double MAX_ACCUM = 0.25;      // clamp large frame gaps
 
+    //todo: does Pane hold every graphical element in it
     private Pane root;
+    //todo: Why not just create multiple independent shapes for the bird?
     private Group player; // bird composed of shapes
     private double velocity = 0;
+    //tod: Why not just a Arraylist<Rectangle> for pipes?
     private final ArrayList<Rectangle[]> pipes = new ArrayList<>();
     private Text scoreText;
     private int score = 0;
@@ -56,6 +60,7 @@ public class HelloApplication extends Application {
         root.setPrefSize(WIDTH, HEIGHT);
 
         // Background sky gradient
+        //todo: why not just a colored rectangle?
         Stop[] stops = new Stop[]{
                 new Stop(0, Color.web("#87CEEB")), // light sky blue
                 new Stop(1, Color.web("#BFE9FF"))  // pale
@@ -64,6 +69,7 @@ public class HelloApplication extends Application {
         sky.setFill(new LinearGradient(0, 0, 0, 1, true, CycleMethod.NO_CYCLE, stops));
 
         // Ground strip
+        //todo: why not just a colored rectangle?
         Rectangle ground = new Rectangle(0, HEIGHT - 60, WIDTH, 60);
         ground.setFill(new LinearGradient(0, 0, 0, 1, true, CycleMethod.NO_CYCLE,
                 new Stop(0, Color.web("#5DB85D")), new Stop(1, Color.web("#3A8A3A"))));
@@ -71,6 +77,7 @@ public class HelloApplication extends Application {
 
         // Create a composed bird (Group) with body, eye, beak
         player = createBird();
+        //todo: why extra modification needed after createBird?
         player.setTranslateX(100);
         player.setTranslateY(HEIGHT / 2);
 
@@ -87,23 +94,22 @@ public class HelloApplication extends Application {
 
         Scene scene = new Scene(root);
         scene.setOnKeyPressed(e -> {
+            //todo: is this hardware agnostic?
             if (e.getCode() == KeyCode.SPACE) {
                 if (running) jump();
                 else restart();
             }
         });
-        scene.setOnMouseClicked(e -> {
-            if (running) jump();
-            else restart();
-        });
 
         primaryStage.setScene(scene);
-        primaryStage.setTitle("Flappy-like (JavaFX) - Modernized");
+        primaryStage.setTitle("Ferdi's Bird");
+        //todo: without this nothing is shown?
         primaryStage.show();
 
         AnimationTimer loop = new AnimationTimer() {
             @Override
             public void handle(long now) {
+                //todo: where is now coming from
                 if (prevTime == 0) { // initialize to avoid huge initial dt
                     prevTime = now;
                     return;
@@ -118,10 +124,12 @@ public class HelloApplication extends Application {
                 prevTime = now;
 
                 // clamp large frame times (e.g., after pause or window drag)
+                //todo: what does this do
                 frameDt = Math.min(frameDt, MAX_ACCUM);
                 accumulator += frameDt;
 
                 // run fixed-size physics steps
+                //todo: what does this do
                 while (accumulator >= FIXED_DT) {
                     physicsUpdate(FIXED_DT);
                     accumulator -= FIXED_DT;
@@ -131,11 +139,13 @@ public class HelloApplication extends Application {
                 scoreText.setTranslateX(WIDTH / 2 - scoreText.getLayoutBounds().getWidth() / 2);
             }
         };
+        //todo: why does it start the loop here? -> shouldnt it start before the physic loop logic
         loop.start();
     }
 
     // create a small bird using shapes and gradients
     private Group createBird() {
+        //todo: check how these shapes look like
         // body with radial gradient
         RadialGradient bodyGrad = new RadialGradient(0, 0.1, 0.2, 0.2, 1, true, CycleMethod.NO_CYCLE,
                 new Stop(0, Color.web("#FFD36E")), new Stop(1, Color.web("#FF9A2E")));
