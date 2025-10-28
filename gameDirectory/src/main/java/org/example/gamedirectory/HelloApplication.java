@@ -1,4 +1,4 @@
-package org.example.flappybird;
+package org.example.gamedirectory;
 
 import javafx.animation.AnimationTimer;
 import javafx.application.Application;

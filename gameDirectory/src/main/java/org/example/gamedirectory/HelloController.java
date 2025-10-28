@@ -1,4 +1,4 @@
-package org.example.flappybird;
+package org.example.gamedirectory;
 
 import javafx.fxml.FXML;
 import javafx.scene.control.Label;

@@ -1,0 +1,30 @@
+POST http://localhost:8080/api/register
+Content-Type: application/json
+Content-Length: 52
+User-Agent: IntelliJ HTTP Client/IntelliJ IDEA 2025.2.3
+Accept-Encoding: br, deflate, gzip, x-gzip
+Accept: */*
+
+{
+  "username": "player1",
+  "password": "pass123"
+}
+
+<> 2025-10-26T190949.409.txt
+
+###
+
+POST http://localhost:8080/api/register
+Content-Type: application/json
+Content-Length: 52
+User-Agent: IntelliJ HTTP Client/IntelliJ IDEA 2025.2.3
+Accept-Encoding: br, deflate, gzip, x-gzip
+Accept: */*
+
+{
+  "username": "player1",
+  "password": "pass123"
+}
+
+###
+

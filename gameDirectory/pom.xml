@@ -5,24 +5,24 @@
   <modelVersion>4.0.0</modelVersion>
 
   <groupId>org.example</groupId>
-  <artifactId>flappyBird</artifactId>
+  <artifactId>gameDirectory</artifactId>
   <version>1.0-SNAPSHOT</version>
-  <name>flappyBird</name>
+  <name>gameDirectory</name>
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-<junit.version>5.10.2</junit.version>  </properties>
+<junit.version>5.12.1</junit.version>  </properties>
 
   <dependencies>
     <dependency>
       <groupId>org.openjfx</groupId>
       <artifactId>javafx-controls</artifactId>
-      <version>21</version>
+      <version>21.0.6</version>
     </dependency>
     <dependency>
       <groupId>org.openjfx</groupId>
       <artifactId>javafx-fxml</artifactId>
-      <version>21</version>
+      <version>21.0.6</version>
     </dependency>
 
 <dependency>
@@ -38,6 +38,19 @@
       <scope>test</scope>
     </dependency>
 
+      <!-- https://mvnrepository.com/artifact/com.squareup.okhttp3/okhttp-jvm -->
+      <dependency>
+          <groupId>com.squareup.okhttp3</groupId>
+          <artifactId>okhttp-jvm</artifactId>
+          <version>5.2.1</version>
+      </dependency>
+
+      <!-- https://mvnrepository.com/artifact/com.google.code.gson/gson -->
+      <dependency>
+          <groupId>com.google.code.gson</groupId>
+          <artifactId>gson</artifactId>
+          <version>2.13.2</version>
+      </dependency>
   </dependencies>
 
   <build>
@@ -60,7 +73,7 @@
             <!-- Default configuration for running with: mvn clean javafx:run -->
             <id>default-cli</id>
             <configuration>
-              <mainClass>org.example.flappybird/org.example.flappybird.HelloApplication</mainClass>
+              <mainClass>org.example.gamedirectory/org.example.gamedirectory.HelloApplication</mainClass>
               <launcher>app</launcher>
               <jlinkZipName>app</jlinkZipName>
               <jlinkImageName>app</jlinkImageName>
