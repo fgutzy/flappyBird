@@ -6,7 +6,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 import java.time.Instant;
 
 //todo: understand how to use mongodb with spring boot (i.e. annotations)
-@Document(collation = "users")
+@Document(collection = "users")
 public class User {
     @Id
     private String id;
