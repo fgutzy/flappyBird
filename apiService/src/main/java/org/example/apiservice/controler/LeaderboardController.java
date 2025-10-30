@@ -40,8 +40,8 @@ public class LeaderboardController {
                     if (!user.getPassword().equals(req.password)) {
                         return ResponseEntity.status(401).body("invalid credentials");
                     }
-                    if (req.score > user.getHighScore()) {
-                        user.setHighScore(req.score);
+                    if (req.highScore > user.getHighScore()) {
+                        user.setHighScore(req.highScore);
                         user.setLastUpdate(Instant.now());
                         repo.save(user);
                     }

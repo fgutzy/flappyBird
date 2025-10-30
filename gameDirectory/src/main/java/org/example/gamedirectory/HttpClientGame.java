@@ -6,10 +6,7 @@ import java.io.IOException;
 import java.lang.reflect.Type;
 import java.net.URI;
 import java.net.http.HttpClient;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
+import java.util.*;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 
@@ -19,7 +16,16 @@ public class HttpClientGame {
     private final String baseUrl;
 
     public HttpClientGame(Properties cfg) {
-        this.baseUrl = cfg.getProperty("api.url");
+        Objects.requireNonNull(cfg, "cfg");
+        String url = cfg.getProperty("api.url");
+        if (url == null || url.isBlank()) {
+            throw new IllegalArgumentException("Missing required property: api.url");
+        }
+        this.baseUrl = url;
+    }
+
+    public HttpClientGame(String cfgPath) {
+        this.baseUrl = cfgPath;
     }
 
     public void register(String username, String password) throws IOException {
@@ -49,7 +55,7 @@ public class HttpClientGame {
         var map = new HashMap<String, Object>();
         map.put("username", username);
         map.put("password", password);
-        map.put("score", score);
+        map.put("highScore", score);
         String json = gson.toJson(map);
 
         HttpRequest req = HttpRequest.newBuilder()

@@ -17,5 +17,5 @@ public class ScoreRequest {
 
     @Min(0)
     @Max(999999)
-    public int score;
+    public int highScore;
 }

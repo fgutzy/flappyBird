@@ -17,6 +17,8 @@ import javafx.scene.text.FontWeight;
 import javafx.scene.text.Text;
 import javafx.stage.Stage;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.Random;
@@ -24,7 +26,7 @@ import java.util.Random;
 public class HelloApplication extends Application {
     private static final double WIDTH = 400, HEIGHT = 600;
     private static final double PLAYER_RADIUS = 18.0;
-
+    private HttpClientGame httpClientGame;
     // Physics / rendering constants (real units)
     private final double GRAVITY = 1000.0;       // px / s^2
     private final double JUMP_VELOCITY = -350.0; // px / s
@@ -53,6 +55,23 @@ public class HelloApplication extends Application {
     private long prevTime = 0;
     private double accumulator = 0.0;
     private double spawnTimer = SPAWN_INTERVAL;
+
+    @Override
+    public void init() throws Exception {
+        httpClientGame = new HttpClientGame("http://localhost:8080/api");
+        //todo: implement Properties retrieval for config
+        // load config from classpath resource before UI thread starts
+        /*
+        Properties cfg = new Properties();
+        try (InputStream in = getClass().getClassLoader().getResourceAsStream("org/config.properties")) {
+            if (in == null) throw new IOException("Resource not found: org/config.properties");
+            cfg.load(in);
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to load config properties", e);
+        }
+        httpClientGame = new HttpClientGame(cfg);
+         */
+    }
 
     @Override
     public void start(Stage primaryStage) {
@@ -292,6 +311,11 @@ public class HelloApplication extends Application {
         go.setStroke(Color.BLACK);
         go.setEffect(new DropShadow(6, Color.gray(0, 0.6)));
         root.getChildren().add(go);
+        try {
+            httpClientGame.submitScore("ferdo", "123", 83);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     private void restart() {
