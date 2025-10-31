@@ -34,6 +34,8 @@ public class HelloApplication extends Application {
     private final double SPAWN_INTERVAL = 1.2;   // seconds
     private final double HITBOX_SCALE = 0.95;    // collision radius scale
 
+    private int highscore = 0;
+
     // Fixed timestep config
     // todo: understand these constants better
     private static final double FIXED_DT = 1.0 / 60.0; // seconds per physics step
@@ -311,10 +313,13 @@ public class HelloApplication extends Application {
         go.setStroke(Color.BLACK);
         go.setEffect(new DropShadow(6, Color.gray(0, 0.6)));
         root.getChildren().add(go);
-        try {
-            httpClientGame.submitScore("ferdo", "123", 83);
-        } catch (IOException e) {
-            e.printStackTrace();
+        if (score >  highscore) {
+            highscore = score;
+            try {
+                httpClientGame.submitScore("ferdo", "123", score);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }
     }
 
