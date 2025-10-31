@@ -28,7 +28,7 @@ public class HttpClientGame {
         this.baseUrl = cfgPath;
     }
 
-    public void register(String username, String password) throws IOException {
+    public boolean register(String username, String password) throws IOException {
         var map = new HashMap<String, Object>();
         map.put("username", username);
         map.put("password", password);
@@ -49,6 +49,34 @@ public class HttpClientGame {
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
+        return true;
+    }
+
+    //todo: is it ok to base logic purely on response code? and is boolean appropriate?
+    public boolean login(String username, String password) throws IOException {
+        var map = new HashMap<String, Object>();
+        map.put("username", username);
+        map.put("password", password);
+        String json = gson.toJson(map);
+
+        HttpRequest req = HttpRequest.newBuilder()
+                .uri(URI.create(baseUrl + "/login"))
+                .header("Content-Type", "application/json")
+                .POST(HttpRequest.BodyPublishers.ofString(json))
+                .build();
+
+        HttpResponse<String> r;
+        try {
+            System.out.println("Sending login request for user: " + username + " and password: " + password);
+            r = client.send(req, HttpResponse.BodyHandlers.ofString());
+            System.out.println("Login response: " + r.statusCode() + " " + r.body());
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e.getMessage());
+        }
+        if (r.statusCode() < 200 || r.statusCode() >= 300) {
+            throw new IOException("login failed: " + r.statusCode() + " " + r.body());
+        }
+        return true;
     }
 
     public void submitScore(String username, String password, int score) throws IOException {
