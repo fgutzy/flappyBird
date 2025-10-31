@@ -77,6 +77,7 @@ public class FlappyBirdGame extends Application {
         authScreen.show(primaryStage, () -> startGame(primaryStage));
     }
 
+    //todo: make register and login more clear (that they are buttons)
     private void startGame(Stage primaryStage) {
         loggedInUsername = authScreen.getCurrentUsername();
         loggedInPassword = authScreen.getCurrentPassword();
@@ -135,6 +136,7 @@ public class FlappyBirdGame extends Application {
 
         primaryStage.setScene(scene);
         primaryStage.setTitle("Ferdi's Bird");
+        primaryStage.setResizable(false);
         //todo: without this nothing is shown?
         primaryStage.show();
 
@@ -337,57 +339,61 @@ public class FlappyBirdGame extends Application {
         }
 
         //display of leaderboard
-        try {
-            Object raw = httpClientGame.getLeaderboard(); // expected to be a List of 3 entries
+        if (!loggedInUsername.equals("guest")) {
+            try {
+                Object raw = httpClientGame.getLeaderboard(); // expected to be a List of 3 entries
 
-            if (raw instanceof java.util.List) {
-                java.util.List<?> list = (java.util.List<?>) raw;
-                double startX = WIDTH / 2 - 120;
-                double startY = HEIGHT / 2 + 30;
+                if (raw instanceof java.util.List) {
+                    java.util.List<?> list = (java.util.List<?>) raw;
+                    double startX = WIDTH / 2 - 120;
+                    double startY = HEIGHT / 2 + 30;
 
-                // Add table header
-                Text header = new Text(startX, startY + 20, "RANKING");
-                header.setFont(Font.font("Arial", FontWeight.BOLD, 22));
-                header.setFill(Color.GOLD);
-                header.setStroke(Color.BLACK);
-                header.setStrokeWidth(1);
-                header.setEffect(new DropShadow(4, Color.gray(0, 0.6)));
-                root.getChildren().add(header);
+                    // Add table header
+                    Text header = new Text(startX, startY + 20, "RANKING");
+                    header.setFont(Font.font("Arial", FontWeight.BOLD, 22));
+                    header.setFill(Color.GOLD);
+                    header.setStroke(Color.BLACK);
+                    header.setStrokeWidth(1);
+                    header.setEffect(new DropShadow(4, Color.gray(0, 0.6)));
+                    root.getChildren().add(header);
 
-                for (int i = 0; i < list.size(); i++) {
-                    Object item = list.get(i);
-                    String name = null;
-                    Integer userScore = null;
+                    for (int i = 0; i < list.size(); i++) {
+                        Object item = list.get(i);
+                        String name = null;
+                        Integer userScore = null;
 
-                    if (item instanceof java.util.Map) {
-                        java.util.Map<?, ?> map = (java.util.Map<?, ?>) item;
-                        Object n = map.get("username");
-                        if (n == null) n = map.get("name");
-                        if (n == null) n = map.get("user");
-                        if (n != null) name = String.valueOf(n).trim();
+                        if (item instanceof java.util.Map) {
+                            java.util.Map<?, ?> map = (java.util.Map<?, ?>) item;
+                            Object n = map.get("username");
+                            if (n == null) n = map.get("name");
+                            if (n == null) n = map.get("user");
+                            if (n != null) name = String.valueOf(n).trim();
 
-                        Object s = map.get("highScore");
-                        if (s == null) s = map.get("score");
-                        if (s == null) s = map.get("points");
-                        if (s instanceof Number) userScore = ((Number) s).intValue();
-                        else if (s != null) {
-                            try { userScore = Integer.parseInt(String.valueOf(s).trim().replaceAll("\\D", "")); } catch (Exception ignored) {}
+                            Object s = map.get("highScore");
+                            if (s == null) s = map.get("score");
+                            if (s == null) s = map.get("points");
+                            if (s instanceof Number) userScore = ((Number) s).intValue();
+                            else if (s != null) {
+                                try {
+                                    userScore = Integer.parseInt(String.valueOf(s).trim().replaceAll("\\D", ""));
+                                } catch (Exception ignored) {
+                                }
+                            }
                         }
+                        //todo: is this called every loop iteration?
+                        //todo: should be displayed even for guest
+                        //add own highscore below the list
+                        System.out.println("adding own score");
+                        double rowY = startY + 50 + (i * 25);
+                        addLeaderboardRow(startX, rowY, String.valueOf(i + 1) + ".", name, userScore);
+                        double ownRowY = startY + 50 + (list.size() * 25) + 12;
+                        addLeaderboardRow(startX, ownRowY, "-", "Youre Best", highscore);
                     }
-
-                    double rowY = startY + 50 + (i * 25);
-
-                    addLeaderboardRow(startX, rowY, String.valueOf(i + 1) + ".", name, userScore);
-
-                    double ownRowY = startY + 50 + (list.size() * 25) + 12;
-                    addLeaderboardRow(startX, ownRowY, "-", "Youre Best", highscore);
-
                 }
+            } catch (Exception e) {
+                e.printStackTrace();
             }
-        } catch (Exception e) {
-            e.printStackTrace();
         }
-        // add own highscore
 
     }
 
