@@ -117,6 +117,7 @@ public class AuthenticationScreen {
         return currentUsername;
     }
 
+    //todo: better without password getter?
     public String getCurrentPassword() {
         return currentPassword;
     }

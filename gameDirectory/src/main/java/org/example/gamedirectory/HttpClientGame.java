@@ -10,6 +10,7 @@ import java.util.*;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 
+//todo: one httpclient class for each action( register, login, submit score, get leaderboard)?
 public class HttpClientGame {
     private final HttpClient client = HttpClient.newHttpClient();
     private final Gson gson = new Gson();
