@@ -320,6 +320,12 @@ public class HelloApplication extends Application {
             } catch (IOException e) {
                 e.printStackTrace();
             }
+            try {
+                System.out.println("Current Leaderboard" + httpClientGame.getLeaderboard());
+            }catch (Exception e){
+                e.printStackTrace();
+            }
+
         }
     }
 

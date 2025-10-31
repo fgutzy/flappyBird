@@ -53,10 +53,9 @@ public class LeaderboardController {
     @GetMapping("/leaderboard")
     public List<LeaderboardEntry> leaderboard() {
         return repo.findAll().stream()
-                .sorted(Comparator.comparingInt(User::getHighScore).reversed()
-                        .thenComparing(User::getLastUpdate))
-                .limit(10)
-                .map(u -> new LeaderboardEntry(u.getUsername(), u.getHighScore(), u.getLastUpdate()))
+                .sorted(Comparator.comparingInt(User::getHighScore).reversed())
+                .limit(3)
+                .map(u -> new LeaderboardEntry(u.getUsername(), u.getHighScore()))
                 .collect(Collectors.toList());
     }
 }
