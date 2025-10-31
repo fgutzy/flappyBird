@@ -18,12 +18,11 @@ import javafx.scene.text.Text;
 import javafx.stage.Stage;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.Random;
 
-public class HelloApplication extends Application {
+public class FlappyBirdGame extends Application {
     private static final double WIDTH = 400, HEIGHT = 600;
     private static final double PLAYER_RADIUS = 18.0;
     private HttpClientGame httpClientGame;
@@ -58,25 +57,29 @@ public class HelloApplication extends Application {
     private double accumulator = 0.0;
     private double spawnTimer = SPAWN_INTERVAL;
 
+    private AuthenticationScreen authScreen;
+    //todo: should default be emtpy isntead of guest
+    private String loggedInUsername = "guest";
+    private String loggedInPassword;
+
+
     @Override
     public void init() throws Exception {
         httpClientGame = new HttpClientGame("http://localhost:8080/api");
+        authScreen = new AuthenticationScreen(httpClientGame);
         //todo: implement Properties retrieval for config
-        // load config from classpath resource before UI thread starts
-        /*
-        Properties cfg = new Properties();
-        try (InputStream in = getClass().getClassLoader().getResourceAsStream("org/config.properties")) {
-            if (in == null) throw new IOException("Resource not found: org/config.properties");
-            cfg.load(in);
-        } catch (IOException e) {
-            throw new RuntimeException("Failed to load config properties", e);
-        }
-        httpClientGame = new HttpClientGame(cfg);
-         */
     }
 
     @Override
     public void start(Stage primaryStage) {
+        //todo: how does this lambda work here?
+        authScreen.show(primaryStage, () -> startGame(primaryStage));
+    }
+
+    private void startGame(Stage primaryStage) {
+        loggedInUsername = authScreen.getCurrentUsername();
+        loggedInPassword = authScreen.getCurrentPassword();
+
         root = new Pane();
         root.setPrefSize(WIDTH, HEIGHT);
 
@@ -317,7 +320,7 @@ public class HelloApplication extends Application {
         if (score >  highscore) {
             highscore = score;
             try {
-                httpClientGame.submitScore("ferdo", "123", highscore);
+                httpClientGame.submitScore(loggedInUsername, loggedInPassword, highscore);
             } catch (IOException e) {
                 e.printStackTrace();
             }
