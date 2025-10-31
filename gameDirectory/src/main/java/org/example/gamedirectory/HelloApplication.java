@@ -313,19 +313,20 @@ public class HelloApplication extends Application {
         go.setStroke(Color.BLACK);
         go.setEffect(new DropShadow(6, Color.gray(0, 0.6)));
         root.getChildren().add(go);
+
         if (score >  highscore) {
             highscore = score;
             try {
-                httpClientGame.submitScore("ferdo", "123", score);
+                httpClientGame.submitScore("ferdo", "123", highscore);
             } catch (IOException e) {
                 e.printStackTrace();
             }
-            try {
-                System.out.println("Current Leaderboard" + httpClientGame.getLeaderboard());
-            }catch (Exception e){
-                e.printStackTrace();
-            }
+        }
 
+        try {
+            System.out.println("Current Leaderboard" + httpClientGame.getLeaderboard());
+        } catch (Exception e){
+            e.printStackTrace();
         }
     }
 
