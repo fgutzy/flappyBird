@@ -1,7 +1,7 @@
 package org.example.apiservice.controler;
 
 import org.example.apiservice.dto.LeaderboardEntry;
-import org.example.apiservice.dto.RegisterRequest;
+import org.example.apiservice.dto.UserDto;
 import org.example.apiservice.dto.ScoreRequest;
 import org.example.apiservice.model.User;
 import org.example.apiservice.repo.UserRepository;
@@ -24,13 +24,26 @@ public class LeaderboardController {
     }
 
     @PostMapping("/register")
-    public ResponseEntity<?> register(@Valid @RequestBody RegisterRequest req) {
+    public ResponseEntity<?> register(@Valid @RequestBody UserDto req) {
         if (repo.findByUsername(req.username).isPresent()) {
             return ResponseEntity.status(409).body("username already exists");
         }
         User u = new User(req.username, req.password);
         repo.save(u);
         return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/login")
+    public ResponseEntity<?> login(@Valid @RequestBody UserDto req) {
+        return repo.findByUsername(req.username)
+                .map(user -> {
+                    if (user.getPassword().equals(req.password)) {
+                        return ResponseEntity.ok().build();
+                    } else {
+                        return ResponseEntity.status(401).body("invalid credentials");
+                    }
+                })
+                .orElse(ResponseEntity.status(404).body("user not found"));
     }
 
     @PostMapping("/score")
@@ -53,7 +66,7 @@ public class LeaderboardController {
     @GetMapping("/leaderboard")
     public List<LeaderboardEntry> leaderboard() {
         return repo.findAll().stream()
-                .sorted(Comparator.comparingInt(User::getHighScore).reversed())
+                .sorted(Comparator.comparingInt(org.example.apiservice.model.User::getHighScore).reversed())
                 .limit(3)
                 .map(u -> new LeaderboardEntry(u.getUsername(), u.getHighScore()))
                 .collect(Collectors.toList());
