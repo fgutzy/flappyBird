@@ -16,15 +16,6 @@ public class HttpClientGame {
     private final Gson gson = new Gson();
     private final String baseUrl;
 
-    public HttpClientGame(Properties cfg) {
-        Objects.requireNonNull(cfg, "cfg");
-        String url = cfg.getProperty("api.url");
-        if (url == null || url.isBlank()) {
-            throw new IllegalArgumentException("Missing required property: api.url");
-        }
-        this.baseUrl = url;
-    }
-
     public HttpClientGame(String cfgPath) {
         this.baseUrl = cfgPath;
     }

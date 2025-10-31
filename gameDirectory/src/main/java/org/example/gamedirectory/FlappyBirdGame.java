@@ -81,6 +81,13 @@ public class FlappyBirdGame extends Application {
         loggedInUsername = authScreen.getCurrentUsername();
         loggedInPassword = authScreen.getCurrentPassword();
 
+        //retrieving highscore at start of game - closing and opening the application would otherwise reset it to 0
+        try {
+            highscore = httpClientGame.getUserHighScore(loggedInUsername);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
         root = new Pane();
         root.setPrefSize(WIDTH, HEIGHT);
 
@@ -311,7 +318,7 @@ public class FlappyBirdGame extends Application {
 
     private void gameOver() {
         running = false;
-        Text go = new Text(WIDTH / 2 - 120, HEIGHT / 2 - 20, "Game Over\nPress Space to restart");
+        Text go = new Text(WIDTH / 2 - 120, HEIGHT / 2 - 170, "Game Over\nPress Space to restart");
         go.setFont(Font.font("Arial", FontWeight.BOLD, 24));
         go.setFill(Color.WHITE);
         go.setStroke(Color.BLACK);
@@ -320,10 +327,12 @@ public class FlappyBirdGame extends Application {
 
         if (score >  highscore) {
             highscore = score;
-            try {
-                httpClientGame.submitScore(loggedInUsername, loggedInPassword, highscore);
-            } catch (IOException e) {
-                e.printStackTrace();
+            if (!loggedInUsername.equals("guest")) {
+                try {
+                    httpClientGame.submitScore(loggedInUsername, loggedInPassword, highscore);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
             }
         }
 
@@ -364,110 +373,47 @@ public class FlappyBirdGame extends Application {
                         else if (s != null) {
                             try { userScore = Integer.parseInt(String.valueOf(s).trim().replaceAll("\\D", "")); } catch (Exception ignored) {}
                         }
-                    } else {
-                        // try common getters via reflection
-                        try {
-                            java.lang.reflect.Method mName = null;
-                            try { mName = item.getClass().getMethod("getUsername"); } catch (NoSuchMethodException ignored) {}
-                            if (mName == null) {
-                                try { mName = item.getClass().getMethod("getName"); } catch (NoSuchMethodException ignored) {}
-                            }
-                            if (mName == null) {
-                                try { mName = item.getClass().getMethod("getUser"); } catch (NoSuchMethodException ignored) {}
-                            }
-                            if (mName != null) {
-                                Object n = mName.invoke(item);
-                                if (n != null) name = String.valueOf(n).trim();
-                            }
-
-                            java.lang.reflect.Method mScore = null;
-                            try { mScore = item.getClass().getMethod("getHighScore"); } catch (NoSuchMethodException ignored) {}
-                            if (mScore == null) {
-                                try { mScore = item.getClass().getMethod("getScore"); } catch (NoSuchMethodException ignored) {}
-                            }
-                            if (mScore == null) {
-                                try { mScore = item.getClass().getMethod("getPoints"); } catch (NoSuchMethodException ignored) {}
-                            }
-                            if (mScore != null) {
-                                Object s = mScore.invoke(item);
-                                if (s instanceof Number) userScore = ((Number) s).intValue();
-                                else if (s != null) {
-                                    try { userScore = Integer.parseInt(String.valueOf(s).trim().replaceAll("\\D", "")); } catch (Exception ignored) {}
-                                }
-                            }
-                        } catch (Exception ignored) {
-                            // fall back to parsing toString below
-                        }
-                    }
-
-                    // fallback: try regex on toString() like "username = a, highScore = 1" or "{username=a, highScore=1}"
-                    if ((name == null || userScore == null) && item != null) {
-                        String s = String.valueOf(item);
-                        java.util.regex.Pattern p = java.util.regex.Pattern.compile(
-                                "username\\s*[=:\\s]\\s*([^,}\\n]+).*?(?:highScore|score)\\s*[=:\\s]\\s*(\\d+)",
-                                java.util.regex.Pattern.CASE_INSENSITIVE | java.util.regex.Pattern.DOTALL);
-                        java.util.regex.Matcher m = p.matcher(s);
-                        if (m.find()) {
-                            if (name == null) name = m.group(1).trim();
-                            if (userScore == null) {
-                                try { userScore = Integer.parseInt(m.group(2).trim()); } catch (Exception ignored) {}
-                            }
-                        } else {
-                            // last resort: remove keys and braces for a simpler "a, 1" style
-                            String cleaned = s.replaceAll("\\{|\\}", "")
-                                    .replaceAll("(?i)username\\s*[=:\\s]\\s*", "")
-                                    .replaceAll("(?i)highScore\\s*[=:\\s]\\s*", "")
-                                    .replaceAll("(?i)score\\s*[=:\\s]\\s*", "")
-                                    .trim();
-                            if (name == null || userScore == null) {
-                                String[] parts = cleaned.split("\\s*,\\s*");
-                                if (parts.length >= 2) {
-                                    if (name == null) name = parts[0].trim();
-                                    if (userScore == null) {
-                                        try { userScore = Integer.parseInt(parts[1].replaceAll("\\D", "")); } catch (Exception ignored) {}
-                                    }
-                                }
-                            }
-                        }
                     }
 
                     double rowY = startY + 50 + (i * 25);
 
-                    // Rank column
-                    Text rankText = new Text(startX + 5, rowY, String.valueOf(i + 1) + ".");
-                    rankText.setFont(Font.font("Arial", FontWeight.BOLD, 18));
-                    rankText.setFill(Color.WHITE);
-                    rankText.setStroke(Color.BLACK);
-                    rankText.setEffect(new DropShadow(4, Color.gray(0, 0.6)));
-                    root.getChildren().add(rankText);
+                    addLeaderboardRow(startX, rowY, String.valueOf(i + 1) + ".", name, userScore);
 
-                    // Username column
-                    String displayName = (name != null) ? name : "Unknown";
-                    Text nameText = new Text(startX + 50, rowY, displayName);
-                    nameText.setFont(Font.font("Arial", FontWeight.BOLD, 18));
-                    nameText.setFill(Color.WHITE);
-                    nameText.setStroke(Color.BLACK);
-                    nameText.setEffect(new DropShadow(4, Color.gray(0, 0.6)));
-                    root.getChildren().add(nameText);
+                    double ownRowY = startY + 50 + (list.size() * 25) + 12;
+                    addLeaderboardRow(startX, ownRowY, "-", "Youre Best", highscore);
 
-                    // Score column
-                    String displayScore = (userScore != null) ? String.valueOf(userScore) : "?";
-                    Text scoreText = new Text(startX + 180, rowY, displayScore);
-                    scoreText.setFont(Font.font("Arial", FontWeight.BOLD, 18));
-                    scoreText.setFill(Color.WHITE);
-                    scoreText.setStroke(Color.BLACK);
-                    scoreText.setEffect(new DropShadow(4, Color.gray(0, 0.6)));
-                    root.getChildren().add(scoreText);
                 }
-            } else {
-                // fallback: print whole thing as a single line
-                Text t = new Text(WIDTH / 2 - 90, HEIGHT / 2 + 30, "Leaderboard: " + String.valueOf(raw));
-                t.setFill(Color.WHITE);
-                root.getChildren().add(t);
             }
         } catch (Exception e) {
             e.printStackTrace();
         }
+        // add own highscore
+
+    }
+
+    private void addLeaderboardRow(double x, double y, String rank, String name, Integer score) {
+        Text rankText = new Text(x + 5, y, rank);
+        rankText.setFont(Font.font("Arial", FontWeight.BOLD, 18));
+        rankText.setFill(Color.WHITE);
+        rankText.setStroke(Color.BLACK);
+        rankText.setEffect(new DropShadow(4, Color.gray(0, 0.6)));
+        root.getChildren().add(rankText);
+
+        String displayName = (name != null) ? name : "Unknown";
+        Text nameText = new Text(x + 50, y, displayName);
+        nameText.setFont(Font.font("Arial", FontWeight.BOLD, 18));
+        nameText.setFill(Color.WHITE);
+        nameText.setStroke(Color.BLACK);
+        nameText.setEffect(new DropShadow(4, Color.gray(0, 0.6)));
+        root.getChildren().add(nameText);
+
+        String displayScore = (score != null) ? String.valueOf(score) : "?";
+        Text scoreTextNode = new Text(x + 180, y, displayScore);
+        scoreTextNode.setFont(Font.font("Arial", FontWeight.BOLD, 18));
+        scoreTextNode.setFill(Color.WHITE);
+        scoreTextNode.setStroke(Color.BLACK);
+        scoreTextNode.setEffect(new DropShadow(4, Color.gray(0, 0.6)));
+        root.getChildren().add(scoreTextNode);
     }
 
     private void restart() {
