@@ -79,6 +79,7 @@ public class HttpClientGame {
         return true;
     }
 
+    //todo: only submit for logged in users
     public void submitScore(String username, String password, int score) throws IOException {
         var map = new HashMap<String, Object>();
         map.put("username", username);

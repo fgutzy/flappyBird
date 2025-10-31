@@ -10,6 +10,7 @@ import javafx.scene.input.KeyCode;
 import javafx.scene.layout.Pane;
 import javafx.scene.paint.*;
 import javafx.scene.shape.Circle;
+import javafx.scene.shape.Line;
 import javafx.scene.shape.Polygon;
 import javafx.scene.shape.Rectangle;
 import javafx.scene.text.Font;
@@ -326,9 +327,145 @@ public class FlappyBirdGame extends Application {
             }
         }
 
+        //display of leaderboard
         try {
-            System.out.println("Current Leaderboard" + httpClientGame.getLeaderboard());
-        } catch (Exception e){
+            Object raw = httpClientGame.getLeaderboard(); // expected to be a List of 3 entries
+
+            if (raw instanceof java.util.List) {
+                java.util.List<?> list = (java.util.List<?>) raw;
+                double startX = WIDTH / 2 - 120;
+                double startY = HEIGHT / 2 + 30;
+
+                // Add table header
+                Text header = new Text(startX, startY + 20, "RANKING");
+                header.setFont(Font.font("Arial", FontWeight.BOLD, 22));
+                header.setFill(Color.GOLD);
+                header.setStroke(Color.BLACK);
+                header.setStrokeWidth(1);
+                header.setEffect(new DropShadow(4, Color.gray(0, 0.6)));
+                root.getChildren().add(header);
+
+                for (int i = 0; i < list.size(); i++) {
+                    Object item = list.get(i);
+                    String name = null;
+                    Integer userScore = null;
+
+                    if (item instanceof java.util.Map) {
+                        java.util.Map<?, ?> map = (java.util.Map<?, ?>) item;
+                        Object n = map.get("username");
+                        if (n == null) n = map.get("name");
+                        if (n == null) n = map.get("user");
+                        if (n != null) name = String.valueOf(n).trim();
+
+                        Object s = map.get("highScore");
+                        if (s == null) s = map.get("score");
+                        if (s == null) s = map.get("points");
+                        if (s instanceof Number) userScore = ((Number) s).intValue();
+                        else if (s != null) {
+                            try { userScore = Integer.parseInt(String.valueOf(s).trim().replaceAll("\\D", "")); } catch (Exception ignored) {}
+                        }
+                    } else {
+                        // try common getters via reflection
+                        try {
+                            java.lang.reflect.Method mName = null;
+                            try { mName = item.getClass().getMethod("getUsername"); } catch (NoSuchMethodException ignored) {}
+                            if (mName == null) {
+                                try { mName = item.getClass().getMethod("getName"); } catch (NoSuchMethodException ignored) {}
+                            }
+                            if (mName == null) {
+                                try { mName = item.getClass().getMethod("getUser"); } catch (NoSuchMethodException ignored) {}
+                            }
+                            if (mName != null) {
+                                Object n = mName.invoke(item);
+                                if (n != null) name = String.valueOf(n).trim();
+                            }
+
+                            java.lang.reflect.Method mScore = null;
+                            try { mScore = item.getClass().getMethod("getHighScore"); } catch (NoSuchMethodException ignored) {}
+                            if (mScore == null) {
+                                try { mScore = item.getClass().getMethod("getScore"); } catch (NoSuchMethodException ignored) {}
+                            }
+                            if (mScore == null) {
+                                try { mScore = item.getClass().getMethod("getPoints"); } catch (NoSuchMethodException ignored) {}
+                            }
+                            if (mScore != null) {
+                                Object s = mScore.invoke(item);
+                                if (s instanceof Number) userScore = ((Number) s).intValue();
+                                else if (s != null) {
+                                    try { userScore = Integer.parseInt(String.valueOf(s).trim().replaceAll("\\D", "")); } catch (Exception ignored) {}
+                                }
+                            }
+                        } catch (Exception ignored) {
+                            // fall back to parsing toString below
+                        }
+                    }
+
+                    // fallback: try regex on toString() like "username = a, highScore = 1" or "{username=a, highScore=1}"
+                    if ((name == null || userScore == null) && item != null) {
+                        String s = String.valueOf(item);
+                        java.util.regex.Pattern p = java.util.regex.Pattern.compile(
+                                "username\\s*[=:\\s]\\s*([^,}\\n]+).*?(?:highScore|score)\\s*[=:\\s]\\s*(\\d+)",
+                                java.util.regex.Pattern.CASE_INSENSITIVE | java.util.regex.Pattern.DOTALL);
+                        java.util.regex.Matcher m = p.matcher(s);
+                        if (m.find()) {
+                            if (name == null) name = m.group(1).trim();
+                            if (userScore == null) {
+                                try { userScore = Integer.parseInt(m.group(2).trim()); } catch (Exception ignored) {}
+                            }
+                        } else {
+                            // last resort: remove keys and braces for a simpler "a, 1" style
+                            String cleaned = s.replaceAll("\\{|\\}", "")
+                                    .replaceAll("(?i)username\\s*[=:\\s]\\s*", "")
+                                    .replaceAll("(?i)highScore\\s*[=:\\s]\\s*", "")
+                                    .replaceAll("(?i)score\\s*[=:\\s]\\s*", "")
+                                    .trim();
+                            if (name == null || userScore == null) {
+                                String[] parts = cleaned.split("\\s*,\\s*");
+                                if (parts.length >= 2) {
+                                    if (name == null) name = parts[0].trim();
+                                    if (userScore == null) {
+                                        try { userScore = Integer.parseInt(parts[1].replaceAll("\\D", "")); } catch (Exception ignored) {}
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    double rowY = startY + 50 + (i * 25);
+
+                    // Rank column
+                    Text rankText = new Text(startX + 5, rowY, String.valueOf(i + 1) + ".");
+                    rankText.setFont(Font.font("Arial", FontWeight.BOLD, 18));
+                    rankText.setFill(Color.WHITE);
+                    rankText.setStroke(Color.BLACK);
+                    rankText.setEffect(new DropShadow(4, Color.gray(0, 0.6)));
+                    root.getChildren().add(rankText);
+
+                    // Username column
+                    String displayName = (name != null) ? name : "Unknown";
+                    Text nameText = new Text(startX + 50, rowY, displayName);
+                    nameText.setFont(Font.font("Arial", FontWeight.BOLD, 18));
+                    nameText.setFill(Color.WHITE);
+                    nameText.setStroke(Color.BLACK);
+                    nameText.setEffect(new DropShadow(4, Color.gray(0, 0.6)));
+                    root.getChildren().add(nameText);
+
+                    // Score column
+                    String displayScore = (userScore != null) ? String.valueOf(userScore) : "?";
+                    Text scoreText = new Text(startX + 180, rowY, displayScore);
+                    scoreText.setFont(Font.font("Arial", FontWeight.BOLD, 18));
+                    scoreText.setFill(Color.WHITE);
+                    scoreText.setStroke(Color.BLACK);
+                    scoreText.setEffect(new DropShadow(4, Color.gray(0, 0.6)));
+                    root.getChildren().add(scoreText);
+                }
+            } else {
+                // fallback: print whole thing as a single line
+                Text t = new Text(WIDTH / 2 - 90, HEIGHT / 2 + 30, "Leaderboard: " + String.valueOf(raw));
+                t.setFill(Color.WHITE);
+                root.getChildren().add(t);
+            }
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }
