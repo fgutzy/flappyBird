@@ -59,7 +59,7 @@ public class FlappyBirdGame extends Application {
     private double spawnTimer = SPAWN_INTERVAL;
 
     private AuthenticationScreen authScreen;
-    //todo: should default be emtpy isntead of guest
+    //todo: should default be emtpy isntead of guest - or boolean or so
     private String loggedInUsername = "guest";
     private String loggedInPassword;
 
@@ -83,10 +83,12 @@ public class FlappyBirdGame extends Application {
         loggedInPassword = authScreen.getCurrentPassword();
 
         //retrieving highscore at start of game - closing and opening the application would otherwise reset it to 0
-        try {
-            highscore = httpClientGame.getUserHighScore(loggedInUsername);
-        } catch (Exception e) {
-            e.printStackTrace();
+        if (!loggedInUsername.equals("guest")) {
+            try {
+                highscore = httpClientGame.getUserHighScore(loggedInUsername);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
         }
 
         root = new Pane();
@@ -380,21 +382,19 @@ public class FlappyBirdGame extends Application {
                                 }
                             }
                         }
-                        //todo: is this called every loop iteration?
-                        //todo: should be displayed even for guest
-                        //add own highscore below the list
                         System.out.println("adding own score");
                         double rowY = startY + 50 + (i * 25);
                         addLeaderboardRow(startX, rowY, String.valueOf(i + 1) + ".", name, userScore);
-                        double ownRowY = startY + 50 + (list.size() * 25) + 12;
-                        addLeaderboardRow(startX, ownRowY, "-", "Youre Best", highscore);
                     }
                 }
             } catch (Exception e) {
                 e.printStackTrace();
             }
         }
-
+        //add own highscore below the list
+        //todo: what does this number mean
+        double ownRowY = (HEIGHT / 2 + 30) + 135;
+        addLeaderboardRow(WIDTH / 2 - 120, ownRowY, "-", "Youre Best", highscore);
     }
 
     private void addLeaderboardRow(double x, double y, String rank, String name, Integer score) {

@@ -52,7 +52,7 @@ public class AuthenticationScreen {
         Button guestButton = new Button("Play as Guest");
         guestButton.setPrefWidth(100);
         guestButton.setOnAction(e -> {
-            //todo: change to empty instead of guest
+            //todo: change to empty instead of guest - or boolean or so
             currentUsername = "guest";
             currentPassword = "guest";
             authStage.close();
