@@ -1,4 +1,4 @@
-module org.example.flappybird {
+module org.example.gamedirectory {
     requires javafx.controls;
     requires javafx.fxml;
     requires com.google.gson;
