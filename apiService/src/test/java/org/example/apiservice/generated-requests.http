@@ -1,0 +1,20 @@
+### POST register
+POST http://localhost:8080/api/register
+Content-Type: application/json
+
+{
+  "username": "player1",
+  "password": "pass123"
+}
+
+<> 2025-10-26T190949.409.txt
+
+### POST submit score
+POST http://localhost:8080/api/score
+Content-Type: application/json
+
+{
+  "username": "ferdo",
+  "password": "123",
+  "score": 83
+}
