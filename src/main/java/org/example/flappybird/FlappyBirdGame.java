@@ -58,7 +58,7 @@ public class FlappyBirdGame extends Application {
     private double accumulator = 0.0;
     private double spawnTimer = SPAWN_INTERVAL;
 
-//    private AuthenticationScreen authScreen;
+    private AuthenticationScreen authScreen;
     //todo: should default be emtpy isntead of guest - or boolean or so
     private String loggedInUsername = "guest";
     private String loggedInPassword;
@@ -79,7 +79,7 @@ public class FlappyBirdGame extends Application {
     public void start(Stage primaryStage) {
 //        System.out.println("start start");
 //        try {
-//            httpClientGame = new HttpClientGame("http://localhost:8080/api");
+            httpClientGame = new HttpClientGame("http://localhost:8080/api");
 //            authScreen = new AuthenticationScreen(httpClientGame);
 //            //authScreen.show(primaryStage, () -> startGame(primaryStage));
 //        } catch (Exception e){
@@ -94,13 +94,14 @@ public class FlappyBirdGame extends Application {
 //    //todo: make register and login more clear (that they are buttons)
 //    private void startGame(Stage primaryStage) {
 //        System.out.println("start game start");
+//
 //        loggedInUsername = authScreen.getCurrentUsername();
 //        loggedInPassword = authScreen.getCurrentPassword();
 
         //retrieving highscore at start of game - closing and opening the application would otherwise reset it to 0
         if (!loggedInUsername.equals("guest")) {
             try {
-                highscore = httpClientGame.getUserHighScore(loggedInUsername);
+                //highscore = httpClientGame.getUserHighScore(loggedInUsername);
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -358,8 +359,8 @@ public class FlappyBirdGame extends Application {
         //display of leaderboard
         if (!loggedInUsername.equals("guest")) {
             try {
-                Object raw = httpClientGame.getLeaderboard(); // expected to be a List of 3 entries
-
+                //Object raw = httpClientGame.getLeaderboard(); // expected to be a List of 3 entries
+                Object raw = null;
                 if (raw instanceof java.util.List) {
                     java.util.List<?> list = (java.util.List<?>) raw;
                     double startX = WIDTH / 2 - 120;
