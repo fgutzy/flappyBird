@@ -70,7 +70,7 @@ public class FlappyBirdGame extends Application {
         authScreen = new AuthenticationScreen(httpClientGame);
         //todo: how does this lambda work here?
         authScreen.show(primaryStage, () -> startGame(primaryStage));
-//    //todo: make register and login more clear (that they are buttons)
+        //todo: make register and login more clear (that they are buttons)
     }
     private void startGame(Stage primaryStage) {
         //todo: how does login after register work?
