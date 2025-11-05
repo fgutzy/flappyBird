@@ -79,9 +79,9 @@ public class FlappyBirdGame extends Application {
     public void start(Stage primaryStage) {
 //        System.out.println("start start");
 //        try {
-            httpClientGame = new HttpClientGame("http://localhost:8080/api");
-//            authScreen = new AuthenticationScreen(httpClientGame);
-//            //authScreen.show(primaryStage, () -> startGame(primaryStage));
+        httpClientGame = new HttpClientGame("http://localhost:8080/api");
+        authScreen = new AuthenticationScreen(httpClientGame);
+        authScreen.show(primaryStage, () -> startGame(primaryStage));
 //        } catch (Exception e){
 //            e.getMessage();
 //            startGame(primaryStage);
@@ -92,8 +92,9 @@ public class FlappyBirdGame extends Application {
 //    }
 //
 //    //todo: make register and login more clear (that they are buttons)
-//    private void startGame(Stage primaryStage) {
-//        System.out.println("start game start");
+    }
+    private void startGame(Stage primaryStage) {
+        System.out.println("start game start");
 //
 //        loggedInUsername = authScreen.getCurrentUsername();
 //        loggedInPassword = authScreen.getCurrentPassword();
