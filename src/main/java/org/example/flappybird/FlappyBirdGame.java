@@ -64,40 +64,21 @@ public class FlappyBirdGame extends Application {
     private String loggedInPassword;
 
 
-//    @Override
-//    public void init() throws Exception {
-//        try {
-//            httpClientGame = new HttpClientGame("http://localhost:8080/api");
-//        } catch (Exception e){
-//            e.getMessage();
-//        }
-//        System.out.println("init end");
-//        //todo: implement Properties retrieval for config
-//    }
-
     @Override
     public void start(Stage primaryStage) {
-//        System.out.println("start start");
-//        try {
         httpClientGame = new HttpClientGame("http://localhost:8080/api");
         authScreen = new AuthenticationScreen(httpClientGame);
+        //todo: how does this lambda work here?
         authScreen.show(primaryStage, () -> startGame(primaryStage));
-//        } catch (Exception e){
-//            e.getMessage();
-//            startGame(primaryStage);
-//        }
-//        startGame(primaryStage);
-//        //todo: how does this lambda work here?
-//        System.out.println("start end");
-//    }
-//
 //    //todo: make register and login more clear (that they are buttons)
     }
     private void startGame(Stage primaryStage) {
-        System.out.println("start game start");
-//
-//        loggedInUsername = authScreen.getCurrentUsername();
-//        loggedInPassword = authScreen.getCurrentPassword();
+        //todo: how does login after register work?
+        //todo: at first launch game shouldn't immediately run
+        //todo: new game starts with enter not space
+
+        loggedInUsername = authScreen.getCurrentUsername();
+        loggedInPassword = authScreen.getCurrentPassword();
 
         //retrieving highscore at start of game - closing and opening the application would otherwise reset it to 0
         if (!loggedInUsername.equals("guest")) {
