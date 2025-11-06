@@ -73,6 +73,8 @@ public class FlappyBirdGame extends Application {
         //todo: make register and login more clear (that they are buttons)
     }
     private void startGame(Stage primaryStage) {
+        System.out.println("start");
+        System.out.flush();
         //todo: how does login after register work?
         //todo: at first launch game shouldn't immediately run
         //todo: new game starts with enter not space
