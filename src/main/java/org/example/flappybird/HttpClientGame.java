@@ -46,6 +46,8 @@ public class HttpClientGame {
 
     //todo: is it ok to base logic purely on response code? and is boolean appropriate?
     public boolean login(String username, String password) throws IOException {
+        System.out.println("http login called with " + username + " " + password);
+        System.out.flush();
         var map = new HashMap<String, Object>();
         map.put("username", username);
         map.put("password", password);
