@@ -71,12 +71,15 @@ public class AuthenticationScreen {
     }
 
     private void handleLogin(String username, String password, Runnable onAuthSuccess, Stage authStage) {
+        System.out.println("handle login called with values " + username + " "  + password);
         if (username.isEmpty() || password.isEmpty()) {
             showError("Please enter username and password");
             return;
         }
         try {
+            System.out.println("calling http login");
             boolean successfullyLogin = httpClientGame.login(username, password);
+            System.out.println("did call http login with result " + successfullyLogin);
             if (successfullyLogin) {
                 currentUsername = username;
                 currentPassword = password;
