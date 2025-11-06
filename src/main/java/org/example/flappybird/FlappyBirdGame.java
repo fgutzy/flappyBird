@@ -451,6 +451,23 @@ public class FlappyBirdGame extends Application {
     }
 
     public static void main(String[] args) {
+        setupLogging();
         launch(args);
+    }
+
+    private static void setupLogging() {
+        try {
+            String timestamp = java.time.LocalDateTime.now()
+                    .format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss"));
+            java.io.File logFile = new java.io.File(System.getProperty("user.home"),
+                    "flappy_log_" + timestamp + ".txt");
+            java.io.PrintStream logStream =
+                    new java.io.PrintStream(new java.io.FileOutputStream(logFile, true), true, "UTF-8");
+            System.setOut(logStream);
+            System.setErr(logStream);
+            System.out.println("==== Application Started ====");
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 }
