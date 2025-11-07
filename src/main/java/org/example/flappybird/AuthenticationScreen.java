@@ -1,5 +1,6 @@
 package org.example.flappybird;
 
+import javafx.application.Platform;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
@@ -64,6 +65,7 @@ public class AuthenticationScreen {
 
         Scene scene = new Scene(root, 300, 400);
         authStage.setScene(scene);
+        Platform.runLater(root::requestFocus);
         authStage.showAndWait();
     }
 
