@@ -36,10 +36,12 @@ public class AuthenticationScreen {
         TextField usernameField = new TextField();
         usernameField.setPromptText("Username");
         usernameField.setPrefWidth(200);
+        usernameField.setFocusTraversable(false);
 
         PasswordField passwordField = new PasswordField();
         passwordField.setPromptText("Password");
         passwordField.setPrefWidth(200);
+        passwordField.setFocusTraversable(false);
 
         Button loginButton = new Button("Login");
         loginButton.setPrefWidth(100);
@@ -78,8 +80,10 @@ public class AuthenticationScreen {
         }
         try {
             System.out.println("calling http login");
+            System.out.flush();
             boolean successfullyLogin = httpClientGame.login(username, password);
             System.out.println("did call http login with result " + successfullyLogin);
+            System.out.flush();
             if (successfullyLogin) {
                 currentUsername = username;
                 currentPassword = password;
