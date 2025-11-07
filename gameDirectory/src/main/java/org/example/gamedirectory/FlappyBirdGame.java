@@ -10,13 +10,13 @@ import javafx.scene.input.KeyCode;
 import javafx.scene.layout.Pane;
 import javafx.scene.paint.*;
 import javafx.scene.shape.Circle;
-import javafx.scene.shape.Line;
 import javafx.scene.shape.Polygon;
 import javafx.scene.shape.Rectangle;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import javafx.scene.text.Text;
 import javafx.stage.Stage;
+import org.example.gamedirectory.AuthenticationScreen;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -65,20 +65,20 @@ public class FlappyBirdGame extends Application {
 
 
     @Override
-    public void init() throws Exception {
-        httpClientGame = new HttpClientGame("http://localhost:8080/api");
-        authScreen = new AuthenticationScreen(httpClientGame);
-        //todo: implement Properties retrieval for config
-    }
-
-    @Override
     public void start(Stage primaryStage) {
+        httpClientGame = new HttpClientGame("url/to/api/service/api");
+        authScreen = new AuthenticationScreen(httpClientGame);
         //todo: how does this lambda work here?
         authScreen.show(primaryStage, () -> startGame(primaryStage));
+        //todo: make register and login more clear (that they are buttons)
     }
-
-    //todo: make register and login more clear (that they are buttons)
     private void startGame(Stage primaryStage) {
+        System.out.println("start");
+        System.out.flush();
+        //todo: how does login after register work?
+        //todo: at first launch game shouldn't immediately run
+        //todo: new game starts with enter not space
+
         loggedInUsername = authScreen.getCurrentUsername();
         loggedInPassword = authScreen.getCurrentPassword();
 
@@ -344,7 +344,6 @@ public class FlappyBirdGame extends Application {
         if (!loggedInUsername.equals("guest")) {
             try {
                 Object raw = httpClientGame.getLeaderboard(); // expected to be a List of 3 entries
-
                 if (raw instanceof java.util.List) {
                     java.util.List<?> list = (java.util.List<?>) raw;
                     double startX = WIDTH / 2 - 120;
@@ -453,6 +452,23 @@ public class FlappyBirdGame extends Application {
     }
 
     public static void main(String[] args) {
+        setupLogging();
         launch(args);
+    }
+
+    private static void setupLogging() {
+        try {
+            String timestamp = java.time.LocalDateTime.now()
+                    .format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss"));
+            java.io.File logFile = new java.io.File(System.getProperty("user.home"),
+                    "flappy_log_" + timestamp + ".txt");
+            java.io.PrintStream logStream =
+                    new java.io.PrintStream(new java.io.FileOutputStream(logFile, true), true, "UTF-8");
+            System.setOut(logStream);
+            System.setErr(logStream);
+            System.out.println("==== Application Started ====");
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 }

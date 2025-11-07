@@ -1,11 +1,9 @@
 package org.example.gamedirectory;
 
+import javafx.application.Platform;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
-import javafx.scene.control.Button;
-import javafx.scene.control.Label;
-import javafx.scene.control.PasswordField;
-import javafx.scene.control.TextField;
+import javafx.scene.control.*;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
@@ -67,25 +65,38 @@ public class AuthenticationScreen {
 
         Scene scene = new Scene(root, 300, 400);
         authStage.setScene(scene);
+        Platform.runLater(root::requestFocus);
         authStage.showAndWait();
     }
 
     private void handleLogin(String username, String password, Runnable onAuthSuccess, Stage authStage) {
+        System.out.println("handle login called with values " + username + " "  + password);
         if (username.isEmpty() || password.isEmpty()) {
             showError("Please enter username and password");
             return;
         }
         try {
+            System.out.println("calling http login");
+            System.out.flush();
             boolean successfullyLogin = httpClientGame.login(username, password);
+            System.out.println("did call http login with result " + successfullyLogin);
+            System.out.flush();
             if (successfullyLogin) {
                 currentUsername = username;
                 currentPassword = password;
+                System.out.println("current user set to " + currentUsername + " " + currentPassword);
+                System.out.flush();
                 authStage.close();
                 onAuthSuccess.run();
             }
-            else showError("Login Failed");
+            else showError("Login failed");
         } catch (Exception e) {
-            showError("Login failed: " + e.getMessage());
+            System.out.println("EXCEPTION CAUGHT:");
+            System.out.println("Exception type: " + e.getClass().getName());
+            System.out.println("Exception message: " + e.getMessage());
+            e.printStackTrace();
+            System.out.flush();
+            showError("Exception during Login: " + e.getMessage());
         }
     }
 
@@ -104,13 +115,13 @@ public class AuthenticationScreen {
             }
             else showError("Registration Failed");
         } catch (Exception e) {
-            showError("Registration failed: " + e.getMessage());
+            showError("Exception during Registration " + e.getMessage());
         }
     }
 
     private void showError(String message) {
-        // TODO: Display error message to user
-        System.err.println(message);
+        Alert alert = new Alert(Alert.AlertType.WARNING, message);
+        alert.showAndWait();
     }
 
     public String getCurrentUsername() {
