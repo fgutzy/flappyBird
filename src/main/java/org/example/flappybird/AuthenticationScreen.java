@@ -2,10 +2,7 @@ package org.example.flappybird;
 
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
-import javafx.scene.control.Button;
-import javafx.scene.control.Label;
-import javafx.scene.control.PasswordField;
-import javafx.scene.control.TextField;
+import javafx.scene.control.*;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
@@ -36,12 +33,10 @@ public class AuthenticationScreen {
         TextField usernameField = new TextField();
         usernameField.setPromptText("Username");
         usernameField.setPrefWidth(200);
-        usernameField.setFocusTraversable(false);
 
         PasswordField passwordField = new PasswordField();
         passwordField.setPromptText("Password");
         passwordField.setPrefWidth(200);
-        passwordField.setFocusTraversable(false);
 
         Button loginButton = new Button("Login");
         loginButton.setPrefWidth(100);
@@ -90,9 +85,9 @@ public class AuthenticationScreen {
                 authStage.close();
                 onAuthSuccess.run();
             }
-            else showError("Login Failed");
+            else showError("Login failed");
         } catch (Exception e) {
-            showError("Login failed: " + e.getMessage());
+            showError("Exception during Login: " + e.getMessage());
         }
     }
 
@@ -111,13 +106,13 @@ public class AuthenticationScreen {
             }
             else showError("Registration Failed");
         } catch (Exception e) {
-            showError("Registration failed: " + e.getMessage());
+            showError("Exception during Registration " + e.getMessage());
         }
     }
 
     private void showError(String message) {
-        // TODO: Display error message to user
-        System.err.println(message);
+        Alert alert = new Alert(Alert.AlertType.WARNING, message);
+        alert.showAndWait();
     }
 
     public String getCurrentUsername() {
