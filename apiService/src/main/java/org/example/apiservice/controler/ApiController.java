@@ -16,10 +16,10 @@ import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api")
-public class LeaderboardController {
+public class ApiController {
     private final UserRepository repo;
 
-    public LeaderboardController(UserRepository repo) {
+    public ApiController(UserRepository repo) {
         this.repo = repo;
     }
 

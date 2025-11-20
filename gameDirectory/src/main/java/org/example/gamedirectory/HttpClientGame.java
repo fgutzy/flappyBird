@@ -23,26 +23,26 @@ public class HttpClientGame {
     }
 
     public boolean register(String username, String password) throws IOException {
-//        var map = new HashMap<String, Object>();
-//        map.put("username", username);
-//        map.put("password", password);
-//        //String json = gson.toJson(map);
-//        HttpRequest req = HttpRequest.newBuilder()
-//                .uri(URI.create(baseUrl + "/register"))
-//                .header("Content-Type", "application/json")
-//                .POST(HttpRequest.BodyPublishers.ofString("json"))
-//                .build();
-//
-//        HttpResponse<String> r;
-//
-//        try {
-//            r = client.send(req, HttpResponse.BodyHandlers.ofString());
-//            if (r.statusCode() < 200 || r.statusCode() >= 300) {
-//                throw new IOException("register failed: " + r.statusCode() + " " + r.body());
-//            }
-//        } catch (InterruptedException e) {
-//            throw new RuntimeException(e);
-//        }
+        var map = new HashMap<String, Object>();
+        map.put("username", username);
+        map.put("password", password);
+        String json = gson.toJson(map);
+        HttpRequest req = HttpRequest.newBuilder()
+                .uri(URI.create(baseUrl + "/register"))
+                .header("Content-Type", "application/json")
+                .POST(HttpRequest.BodyPublishers.ofString(json))
+                .build();
+
+        HttpResponse<String> r;
+
+        try {
+            r = client.send(req, HttpResponse.BodyHandlers.ofString());
+            if (r.statusCode() < 200 || r.statusCode() >= 300) {
+                throw new IOException("register failed: " + r.statusCode() + " " + r.body());
+            }
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
         return true;
     }
 
@@ -90,12 +90,12 @@ public class HttpClientGame {
         map.put("username", username);
         map.put("password", password);
         map.put("highScore", score);
-        //String json = gson.toJson(map);
+        String json = gson.toJson(map);
 
         HttpRequest req = HttpRequest.newBuilder()
                 .uri(URI.create(baseUrl + "/score"))
                 .header("Content-Type", "application/json")
-                .POST(HttpRequest.BodyPublishers.ofString("json"))
+                .POST(HttpRequest.BodyPublishers.ofString(json))
                 .build();
 
         HttpResponse<String> r;
@@ -105,7 +105,7 @@ public class HttpClientGame {
             throw new RuntimeException(e);
         }
         if (r.statusCode() < 200 || r.statusCode() >= 300) {
-            throw new IOException("register failed: " + r.statusCode() + " " + r.body());
+            throw new IOException("submitting score failed: " + r.statusCode() + " " + r.body());
         }
     }
 
