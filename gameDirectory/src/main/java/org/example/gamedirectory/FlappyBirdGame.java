@@ -66,7 +66,7 @@ public class FlappyBirdGame extends Application {
 
     @Override
     public void start(Stage primaryStage) {
-        httpClientGame = new HttpClientGame("url/to/api/service/api");
+        httpClientGame = new HttpClientGame("https://pedicellate-overvaliant-rosette.ngrok-free.dev/api");
         authScreen = new AuthenticationScreen(httpClientGame);
         //todo: how does this lambda work here?
         authScreen.show(primaryStage, () -> startGame(primaryStage));
