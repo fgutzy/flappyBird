@@ -13,7 +13,8 @@ import java.time.Instant;
 import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
-
+import java.util.stream.StreamSupport;
+//todo: optimize portraying top 3 users
 @RestController
 @RequestMapping("/api")
 public class ApiController {
@@ -47,6 +48,7 @@ public class ApiController {
     }
 
     @PostMapping("/score")
+    //todo: should only be called if new highscore
     public ResponseEntity<?> submitScore(@Valid @RequestBody ScoreRequest req) {
         return repo.findByUsername(req.username)
                 .map(user -> {
@@ -65,7 +67,7 @@ public class ApiController {
 
     @GetMapping("/leaderboard")
     public List<LeaderboardEntry> leaderboard() {
-        return repo.findAll().stream()
+        return StreamSupport.stream(repo.findAll().spliterator(), false)
                 .sorted(Comparator.comparingInt(org.example.apiservice.model.User::getHighScore).reversed())
                 .limit(3)
                 .map(u -> new LeaderboardEntry(u.getUsername(), u.getHighScore()))

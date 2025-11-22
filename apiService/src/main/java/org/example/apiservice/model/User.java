@@ -1,15 +1,14 @@
 package org.example.apiservice.model;
 
 import org.springframework.data.annotation.Id;
-import org.springframework.data.mongodb.core.mapping.Document;
+import org.springframework.data.redis.core.RedisHash;
 
 import java.time.Instant;
 
 //todo: understand how to use mongodb with spring boot (i.e. annotations)
-@Document(collection = "users")
+@RedisHash("User")
 public class User {
     @Id
-    private String id;
     private String username;
     private String password;
     private int highScore;
@@ -25,8 +24,7 @@ public class User {
     }
 
     // getters / setters
-    public String getId() { return id; }
-    public void setId(String id) { this.id = id; }
+
     public String getUsername() { return username; }
     public void setUsername(String username) { this.username = username; }
     public String getPassword() { return password; }

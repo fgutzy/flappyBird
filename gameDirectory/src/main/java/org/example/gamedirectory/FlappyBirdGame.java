@@ -22,7 +22,11 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.Random;
+import java.util.logging.Logger;
+
 //todo: own highscore correct in database but not in display of "your highscore"
+//todo: bird should be still at start of new game (used to work??)
+//todo: your own "best" is not retrieved and portrayed in leaderboard -> only worked for ferdi somehow -> but was correct in redis
 public class FlappyBirdGame extends Application {
     private static final double WIDTH = 400, HEIGHT = 600;
     private static final double PLAYER_RADIUS = 18.0;
@@ -63,10 +67,14 @@ public class FlappyBirdGame extends Application {
     private String loggedInUsername = "guest";
     private String loggedInPassword;
 
+    Logger logger = Logger.getLogger(getClass().getName());
+
+
 
     @Override
     public void start(Stage primaryStage) {
-        httpClientGame = new HttpClientGame("https://pedicellate-overvaliant-rosette.ngrok-free.dev/api");
+        //httpClientGame = new HttpClientGame("https://pedicellate-overvaliant-rosette.ngrok-free.dev/api");
+        httpClientGame = new HttpClientGame("http://localhost:8080/api");
         authScreen = new AuthenticationScreen(httpClientGame);
         //todo: how does this lambda work here?
         authScreen.show(primaryStage, () -> startGame(primaryStage));
@@ -347,9 +355,13 @@ public class FlappyBirdGame extends Application {
         }
 
         //display of leaderboard
+        logger.info("checking if logged in");
         if (!loggedInUsername.equals("guest")) {
+            logger.info("logged in");
             try {
                 Object raw = httpClientGame.getLeaderboard(); // expected to be a List of 3 entries
+                System.out.println("leaderboard raw: " + raw);
+                System.out.flush();
                 if (raw instanceof java.util.List) {
                     java.util.List<?> list = (java.util.List<?>) raw;
                     double startX = WIDTH / 2 - 120;
@@ -387,6 +399,7 @@ public class FlappyBirdGame extends Application {
                                 }
                             }
                         }
+                        logger.info("Leaderboard entry: " + (i + 1) + ". " + name + " - " + userScore);
                         System.out.println("adding own score");
                         double rowY = startY + 50 + (i * 25);
                         addLeaderboardRow(startX, rowY, String.valueOf(i + 1) + ".", name, userScore);

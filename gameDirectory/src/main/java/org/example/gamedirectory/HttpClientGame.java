@@ -120,6 +120,7 @@ public class HttpClientGame {
             throw new IOException("leaderboard failed: " + res.statusCode());
         }
         Type t = new TypeToken<List<Map<String, Object>>>() {}.getType();
+        System.out.println("response as json " + gson.fromJson(res.body(), t));
         return gson.fromJson(res.body(), t);
     }
 
