@@ -22,7 +22,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.Random;
-
+//todo: own highscore correct in database but not in display of "your highscore"
 public class FlappyBirdGame extends Application {
     private static final double WIDTH = 400, HEIGHT = 600;
     private static final double PLAYER_RADIUS = 18.0;
@@ -85,7 +85,10 @@ public class FlappyBirdGame extends Application {
         //retrieving highscore at start of game - closing and opening the application would otherwise reset it to 0
         if (!loggedInUsername.equals("guest")) {
             try {
+                System.out.println("updating highscore variable");
                 highscore = httpClientGame.getUserHighScore(loggedInUsername);
+                System.out.println("highscore: " + highscore);
+                System.out.flush();
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -333,7 +336,10 @@ public class FlappyBirdGame extends Application {
             highscore = score;
             if (!loggedInUsername.equals("guest")) {
                 try {
+                    System.out.println("submitting new highscore");
                     httpClientGame.submitScore(loggedInUsername, loggedInPassword, highscore);
+                    System.out.println("submitted highscore with value " +  highscore);
+                    System.out.flush();
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
