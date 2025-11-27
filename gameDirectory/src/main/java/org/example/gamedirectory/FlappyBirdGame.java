@@ -29,7 +29,6 @@ import javafx.scene.media.MediaPlayer;
 
 
 
-//todo: add sound when hitting a pipe or ground
 public class FlappyBirdGame extends Application {
     private static final double WIDTH = 400, HEIGHT = 600;
     private static final double PLAYER_RADIUS = 18.0;
