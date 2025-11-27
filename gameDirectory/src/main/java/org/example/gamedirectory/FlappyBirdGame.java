@@ -16,15 +16,20 @@ import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import javafx.scene.text.Text;
 import javafx.stage.Stage;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.Objects;
 import java.util.Random;
 import java.util.logging.Logger;
 
-//todo: own highscore correct in database but not in display of "your highscore"
+import javafx.scene.media.Media;
+import javafx.scene.media.MediaPlayer;
+
+
+
 //todo: add sound when hitting a pipe or ground
-//todo: your own "best" is not retrieved and portrayed in leaderboard -> only worked for ferdi somehow -> but was correct in redis
 public class FlappyBirdGame extends Application {
     private static final double WIDTH = 400, HEIGHT = 600;
     private static final double PLAYER_RADIUS = 18.0;
@@ -37,6 +42,8 @@ public class FlappyBirdGame extends Application {
     private final double HITBOX_SCALE = 0.95;    // collision radius scale
 
     private int highscore = 0;
+
+    private MediaPlayer deathSound, swingSound;
 
     // Fixed timestep config
     // todo: understand these constants better
@@ -136,6 +143,10 @@ public class FlappyBirdGame extends Application {
         primaryStage.setTitle("Ferdi's Bird");
         primaryStage.setResizable(false);
         primaryStage.show();
+
+        loadSounds();
+        //deathSound = new DeathSound("/sounds/death.wav");
+
 
         root.getChildren().addAll(sky, ground, player, scoreText, startHint);
 
@@ -298,6 +309,10 @@ public class FlappyBirdGame extends Application {
     }
 
     private void jump() {
+        if (swingSound != null) {
+            swingSound.stop(); // rewind so it plays instantly
+            swingSound.play();
+        }
         velocity = JUMP_VELOCITY;
     }
 
@@ -334,6 +349,11 @@ public class FlappyBirdGame extends Application {
     }
 
     private void gameOver() {
+        if (deathSound != null) {
+            deathSound.stop(); // rewind so it plays instantly
+            deathSound.play();
+        }
+        //deathSound.play();
         running = false;
         Text go = new Text(WIDTH / 2 - 120, HEIGHT / 2 - 170, "Game Over\nPress Space to restart");
         go.setFont(Font.font("Arial", FontWeight.BOLD, 24));
@@ -472,11 +492,6 @@ public class FlappyBirdGame extends Application {
         spawnTimer = SPAWN_INTERVAL;
     }
 
-    public static void main(String[] args) {
-        setupLogging();
-        launch(args);
-    }
-
     private static void setupLogging() {
         try {
             String timestamp = java.time.LocalDateTime.now()
@@ -491,5 +506,43 @@ public class FlappyBirdGame extends Application {
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }
+
+    private void loadSounds() {
+        try {
+            Media hit = new Media(Objects.requireNonNull(getClass()
+                            .getResource("/sounds/death.wav"))
+                    .toExternalForm());
+
+            deathSound = new MediaPlayer(hit);
+
+            // Reset so it can be played repeatedly without reloading
+            deathSound.setOnEndOfMedia(() -> deathSound.stop());
+
+        } catch (Exception e) {
+            System.err.println("Could not load death sound!");
+            e.printStackTrace();
+        }
+
+        try {
+            Media swing = new Media(Objects.requireNonNull(getClass()
+                            .getResource("/sounds/swing.wav"))
+                    .toExternalForm());
+
+            swingSound = new MediaPlayer(swing);
+
+            // Reset so it can be played repeatedly without reloading
+            swingSound.setOnEndOfMedia(() -> swingSound.stop());
+
+        } catch (Exception e) {
+            System.err.println("Could not load swing sound!");
+            e.printStackTrace();
+        }
+    }
+
+
+    public static void main(String[] args) {
+        setupLogging();
+        launch(args);
     }
 }
