@@ -12,7 +12,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-//todo: one httpclient class for each action( register, login, submit score, get leaderboard)?
 public class HttpClientGame {
     private final HttpClient client = HttpClient.newHttpClient();
     private final Gson gson = new Gson();
@@ -46,7 +45,6 @@ public class HttpClientGame {
         return true;
     }
 
-    //todo: is it ok to base logic purely on response code? and is boolean appropriate?
     public boolean login(String username, String password) throws IOException {
         System.out.println("http login called with " + username + " " + password);
         System.out.flush();
@@ -84,7 +82,6 @@ public class HttpClientGame {
         return true;
     }
 
-    //todo: only submit for logged in users
     public void submitScore(String username, String password, int score) throws IOException {
         var map = new HashMap<String, Object>();
         map.put("username", username);

@@ -48,7 +48,6 @@ public class ApiController {
     }
 
     @PostMapping("/score")
-    //todo: should only be called if new highscore
     public ResponseEntity<?> submitScore(@Valid @RequestBody ScoreRequest req) {
         return repo.findByUsername(req.username)
                 .map(user -> {

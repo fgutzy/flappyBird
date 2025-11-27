@@ -8,6 +8,7 @@ import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
+import javafx.stage.Modality;
 import javafx.stage.Stage;
 
 public class AuthenticationScreen {
@@ -22,6 +23,10 @@ public class AuthenticationScreen {
     //todo: primaryStage needed?
     public void show(Stage primaryStage, Runnable onAuthSuccess) {
         Stage authStage = new Stage();
+        if (primaryStage != null) {
+            authStage.initOwner(primaryStage);
+            authStage.initModality(Modality.WINDOW_MODAL);
+        }
         authStage.setTitle("Login Page");
 
         VBox root = new VBox(15);
@@ -51,7 +56,6 @@ public class AuthenticationScreen {
         Button guestButton = new Button("Play as Guest");
         guestButton.setPrefWidth(100);
         guestButton.setOnAction(e -> {
-            //todo: change to empty instead of guest - or boolean or so
             currentUsername = "guest";
             currentPassword = "guest";
             authStage.close();
@@ -66,6 +70,16 @@ public class AuthenticationScreen {
 
         Scene scene = new Scene(root, 300, 400);
         authStage.setScene(scene);
+
+        authStage.setOnShown(e -> {
+            if (primaryStage != null) {
+                authStage.setX(primaryStage.getX() + (primaryStage.getWidth()  - authStage.getWidth())  / 2);
+                authStage.setY(primaryStage.getY() + (primaryStage.getHeight() - authStage.getHeight()) / 2);
+            } else {
+                authStage.centerOnScreen();
+            }
+        });
+
         Platform.runLater(root::requestFocus);
         authStage.showAndWait();
     }
@@ -129,7 +143,6 @@ public class AuthenticationScreen {
         return currentUsername;
     }
 
-    //todo: better without password getter?
     public String getCurrentPassword() {
         return currentPassword;
     }

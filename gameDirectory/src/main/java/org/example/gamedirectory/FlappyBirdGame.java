@@ -16,8 +16,6 @@ import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import javafx.scene.text.Text;
 import javafx.stage.Stage;
-import org.example.gamedirectory.AuthenticationScreen;
-
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -25,7 +23,7 @@ import java.util.Random;
 import java.util.logging.Logger;
 
 //todo: own highscore correct in database but not in display of "your highscore"
-//todo: bird should be still at start of new game (used to work??)
+//todo: add sound when hitting a pipe or ground
 //todo: your own "best" is not retrieved and portrayed in leaderboard -> only worked for ferdi somehow -> but was correct in redis
 public class FlappyBirdGame extends Application {
     private static final double WIDTH = 400, HEIGHT = 600;
@@ -45,9 +43,7 @@ public class FlappyBirdGame extends Application {
     private static final double FIXED_DT = 1.0 / 60.0; // seconds per physics step
     private static final double MAX_ACCUM = 0.25;      // clamp large frame gaps
 
-    //todo: does Pane hold every graphical element in it
     private Pane root;
-    //todo: Why not just create multiple independent shapes for the bird?
     private Group player; // bird composed of shapes
     private double velocity = 0;
     //tod: Why not just a Arraylist<Rectangle> for pipes?
@@ -56,6 +52,7 @@ public class FlappyBirdGame extends Application {
     private int score = 0;
     private final Random rand = new Random();
     private boolean running = true;
+    private boolean hasJumpedOnce = false;
 
     // loop state
     private long prevTime = 0;
@@ -63,7 +60,6 @@ public class FlappyBirdGame extends Application {
     private double spawnTimer = SPAWN_INTERVAL;
 
     private AuthenticationScreen authScreen;
-    //todo: should default be emtpy isntead of guest - or boolean or so
     private String loggedInUsername = "guest";
     private String loggedInPassword;
 
@@ -76,16 +72,11 @@ public class FlappyBirdGame extends Application {
         //httpClientGame = new HttpClientGame("https://pedicellate-overvaliant-rosette.ngrok-free.dev/api");
         httpClientGame = new HttpClientGame("https://api.myveryownhomenetwork.site/api");
         authScreen = new AuthenticationScreen(httpClientGame);
-        //todo: how does this lambda work here?
         authScreen.show(primaryStage, () -> startGame(primaryStage));
-        //todo: make register and login more clear (that they are buttons)
     }
     private void startGame(Stage primaryStage) {
         System.out.println("start");
         System.out.flush();
-        //todo: how does login after register work?
-        //todo: at first launch game shouldn't immediately run
-        //todo: new game starts with enter not space
 
         loggedInUsername = authScreen.getCurrentUsername();
         loggedInPassword = authScreen.getCurrentPassword();
@@ -135,28 +126,40 @@ public class FlappyBirdGame extends Application {
         scoreText.setTranslateY(40);
         scoreText.setTextOrigin(VPos.TOP);
 
-        // Add children in back-to-front order
-        root.getChildren().addAll(sky, ground, player, scoreText);
+        Text startHint = new Text(WIDTH / 2 - 100, HEIGHT / 2 - 100, "Press SPACE to Start");
+        startHint.setFont(Font.font("Arial", FontWeight.BOLD, 24));
+        startHint.setFill(Color.WHITE);
+        startHint.setStroke(Color.BLACK);
 
         Scene scene = new Scene(root);
-        scene.setOnKeyPressed(e -> {
-            //todo: is this hardware agnostic?
-            if (e.getCode() == KeyCode.SPACE) {
-                if (running) jump();
-                else restart();
-            }
-        });
-
         primaryStage.setScene(scene);
         primaryStage.setTitle("Ferdi's Bird");
         primaryStage.setResizable(false);
-        //todo: without this nothing is shown?
         primaryStage.show();
 
-        AnimationTimer loop = new AnimationTimer() {
+        root.getChildren().addAll(sky, ground, player, scoreText, startHint);
+
+        scene.setOnKeyPressed(e -> {
+            if (e.getCode() == KeyCode.SPACE) { //is hardware agnostic
+                if (running) {
+                    if (!hasJumpedOnce){
+                        root.getChildren().remove(startHint);
+                        hasJumpedOnce = true;
+                    }
+                    jump();
+                }
+                else{
+                    restart();
+                    root.getChildren().add(startHint);
+                    hasJumpedOnce = false;
+                }
+            }
+        });
+
+
+        AnimationTimer loop = new AnimationTimer() { //todo: is called every frame (hardware dependent?)
             @Override
             public void handle(long now) {
-                //todo: where is now coming from
                 if (prevTime == 0) { // initialize to avoid huge initial dt
                     prevTime = now;
                     return;
@@ -170,7 +173,6 @@ public class FlappyBirdGame extends Application {
                 double frameDt = (now - prevTime) / 1_000_000_000.0;
                 prevTime = now;
 
-                // clamp large frame times (e.g., after pause or window drag)
                 //todo: what does this do
                 frameDt = Math.min(frameDt, MAX_ACCUM);
                 accumulator += frameDt;
@@ -186,7 +188,6 @@ public class FlappyBirdGame extends Application {
                 scoreText.setTranslateX(WIDTH / 2 - scoreText.getLayoutBounds().getWidth() / 2);
             }
         };
-        //todo: why does it start the loop here? -> shouldnt it start before the physic loop logic
         loop.start();
     }
 
@@ -224,6 +225,7 @@ public class FlappyBirdGame extends Application {
     }
 
     private void physicsUpdate(double dt) {
+        if (!hasJumpedOnce) return;
         // Apply gravity and integrate position
         velocity += GRAVITY * dt;
         player.setTranslateY(player.getTranslateY() + velocity * dt);

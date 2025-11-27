@@ -5,7 +5,6 @@ import org.springframework.data.redis.core.RedisHash;
 
 import java.time.Instant;
 
-//todo: understand how to use mongodb with spring boot (i.e. annotations)
 @RedisHash("User")
 public class User {
     @Id
