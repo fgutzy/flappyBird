@@ -20,7 +20,6 @@ public class AuthenticationScreen {
         this.httpClientGame = httpClientGame;
     }
 
-    //todo: primaryStage needed?
     public void show(Stage primaryStage, Runnable onAuthSuccess) {
         Stage authStage = new Stage();
         if (primaryStage != null) {

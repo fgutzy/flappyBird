@@ -14,7 +14,6 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
-//todo: optimize portraying top 3 users
 @RestController
 @RequestMapping("/api")
 public class ApiController {
