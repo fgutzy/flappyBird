@@ -16,8 +16,8 @@ import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import javafx.scene.text.Text;
 import javafx.stage.Stage;
-import javafx.scene.media.Media;
-import javafx.scene.media.MediaPlayer;
+//import javafx.scene.media.Media;
+//import javafx.scene.media.MediaPlayer;
 
 import java.io.IOException;
 import java.util.*;
@@ -73,8 +73,8 @@ public class FlappyBirdGame extends Application {
     private double spawnTimer = SPAWN_INTERVAL;
 
     // ---- Audio ----
-    private MediaPlayer deathSound;
-    private MediaPlayer swingSound;
+//    private MediaPlayer deathSound;
+//    private MediaPlayer swingSound;
 
 
     /* =========================================================
@@ -139,6 +139,7 @@ public class FlappyBirdGame extends Application {
         // Start Hint
         Text startHint = new Text(WIDTH / 2 - 100, HEIGHT / 2 - 100, "Press SPACE to Start");
         startHint.setFont(Font.font("Arial", FontWeight.BOLD, 24));
+        startHint.setX(WIDTH / 2 - startHint.getBoundsInLocal().getWidth() / 2);
         startHint.setFill(Color.WHITE);
         startHint.setStroke(Color.BLACK);
 
@@ -148,7 +149,7 @@ public class FlappyBirdGame extends Application {
         primaryStage.setResizable(false);
         primaryStage.show();
 
-        loadSounds();
+        //loadSounds();
 
         root.getChildren().addAll(sky, ground, player, scoreText, startHint);
 
@@ -323,10 +324,10 @@ public class FlappyBirdGame extends Application {
     }
 
     private void jump() {
-        if (swingSound != null) {
-            swingSound.stop();
-            swingSound.play();
-        }
+//        if (swingSound != null) {
+//            swingSound.stop();
+//            swingSound.play();
+//        }
         velocity = -350.0;
     }
 
@@ -354,10 +355,10 @@ public class FlappyBirdGame extends Application {
      *  GAME STATE (GAME OVER / RESTART)
      * ========================================================= */
     private void gameOver() {
-        if (deathSound != null) {
-            deathSound.stop();
-            deathSound.play();
-        }
+//        if (deathSound != null) {
+//            deathSound.stop();
+//            deathSound.play();
+//        }
 
         running = false;
 
@@ -508,27 +509,27 @@ public class FlappyBirdGame extends Application {
     /* =========================================================
      *  UTILITY
      * ========================================================= */
-    private void loadSounds() {
-        try {
-            Media hit = new Media(Objects.requireNonNull(
-                    getClass().getResource("/sounds/death.wav")).toExternalForm());
-            deathSound = new MediaPlayer(hit);
-            deathSound.setOnEndOfMedia(() -> deathSound.stop());
-        } catch (Exception e) {
-            System.err.println("Could not load death sound!");
-            e.printStackTrace();
-        }
-
-        try {
-            Media swing = new Media(Objects.requireNonNull(
-                    getClass().getResource("/sounds/swing.wav")).toExternalForm());
-            swingSound = new MediaPlayer(swing);
-            swingSound.setOnEndOfMedia(() -> swingSound.stop());
-        } catch (Exception e) {
-            System.err.println("Could not load swing sound!");
-            e.printStackTrace();
-        }
-    }
+//    private void loadSounds() {
+//        try {
+//            Media hit = new Media(Objects.requireNonNull(
+//                    getClass().getResource("/sounds/death.wav")).toExternalForm());
+//            deathSound = new MediaPlayer(hit);
+//            deathSound.setOnEndOfMedia(() -> deathSound.stop());
+//        } catch (Exception e) {
+//            System.err.println("Could not load death sound!");
+//            e.printStackTrace();
+//        }
+//
+//        try {
+//            Media swing = new Media(Objects.requireNonNull(
+//                    getClass().getResource("/sounds/swing.wav")).toExternalForm());
+//            swingSound = new MediaPlayer(swing);
+//            swingSound.setOnEndOfMedia(() -> swingSound.stop());
+//        } catch (Exception e) {
+//            System.err.println("Could not load swing sound!");
+//            e.printStackTrace();
+//        }
+//    }
 
     private static void setupLogging() {
         try {
@@ -554,3 +555,4 @@ public class FlappyBirdGame extends Application {
         launch(args);
     }
 }
+
