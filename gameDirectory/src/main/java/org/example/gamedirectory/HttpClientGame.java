@@ -2,23 +2,49 @@ package org.example.gamedirectory;
 
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
+
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLParameters;
 import java.io.IOException;
 import java.lang.reflect.Type;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.security.KeyManagementException;
+import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 public class HttpClientGame {
-    private final HttpClient client = HttpClient.newHttpClient();
+    private final HttpClient client;
     private final Gson gson = new Gson();
     private final String baseUrl;
 
     public HttpClientGame(String cfgPath) {
         this.baseUrl = cfgPath;
+        this.client = createHttpClient();
+    }
+
+    private HttpClient createHttpClient() {
+        try {
+            // Get SSL context that trusts all certificates
+            SSLContext sslContext = SSLHelper.getTrustAllSSLContext();
+
+            // Disable hostname verification
+            SSLParameters sslParameters = new SSLParameters();
+            sslParameters.setEndpointIdentificationAlgorithm(null);
+
+            // Build HttpClient with disabled SSL checks
+            return HttpClient.newBuilder()
+                    .sslContext(sslContext)
+                    .sslParameters(sslParameters)
+                    .build();
+
+        } catch (NoSuchAlgorithmException | KeyManagementException e) {
+            throw new RuntimeException("Failed to create HttpClient with disabled SSL", e);
+        }
     }
 
     public boolean register(String username, String password) throws IOException {

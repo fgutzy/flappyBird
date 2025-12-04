@@ -149,7 +149,7 @@ public class FlappyBirdGame extends Application {
         primaryStage.setResizable(false);
         primaryStage.show();
 
-        //loadSounds();
+//        loadSounds();
 
         root.getChildren().addAll(sky, ground, player, scoreText, startHint);
 
