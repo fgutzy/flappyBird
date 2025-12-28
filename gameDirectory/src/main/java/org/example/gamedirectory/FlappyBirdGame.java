@@ -16,76 +16,93 @@ import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import javafx.scene.text.Text;
 import javafx.stage.Stage;
-import org.example.gamedirectory.AuthenticationScreen;
+//import javafx.scene.media.Media;
+//import javafx.scene.media.MediaPlayer;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.Random;
+import java.util.*;
+import java.util.logging.Logger;
 
 public class FlappyBirdGame extends Application {
-    private static final double WIDTH = 400, HEIGHT = 600;
-    private static final double PLAYER_RADIUS = 18.0;
-    private HttpClientGame httpClientGame;
-    // Physics / rendering constants (real units)
-    private final double GRAVITY = 1000.0;       // px / s^2
-    private final double JUMP_VELOCITY = -350.0; // px / s
-    private final double SCROLL_SPEED = 200.0;   // px / s
-    private final double SPAWN_INTERVAL = 1.2;   // seconds
-    private final double HITBOX_SCALE = 0.95;    // collision radius scale
 
+    /* =========================================================
+     *  STATIC CONSTANTS
+     * ========================================================= */
+    private static final double WIDTH = 400;
+    private static final double HEIGHT = 600;
+
+    private static final double PLAYER_RADIUS = 18.0;
+    private static final double SPAWN_INTERVAL = 1.2;
+    private static final double HITBOX_SCALE = 0.95;
+
+    private static final double FIXED_DT = 1.0 / 60.0;
+    private static final double MAX_ACCUM = 0.25;
+
+    /* =========================================================
+     *  INSTANCE VARIABLES
+     * ========================================================= */
+
+    // ---- Networking / Authentication ----
+    private HttpClientGame httpClientGame;
+    private AuthenticationScreen authScreen;
+    private String loggedInUsername = "guest";
+    private String loggedInPassword;
+
+    // ---- JavaFX Root + UI ----
+    private Pane root;
+    private Group player;
+    private Text scoreText;
+
+    private final Logger logger = Logger.getLogger(getClass().getName());
+
+    // ---- Game State ----
+    private double velocity = 0;
+    private int score = 0;
     private int highscore = 0;
 
-    // Fixed timestep config
-    // todo: understand these constants better
-    private static final double FIXED_DT = 1.0 / 60.0; // seconds per physics step
-    private static final double MAX_ACCUM = 0.25;      // clamp large frame gaps
-
-    //todo: does Pane hold every graphical element in it
-    private Pane root;
-    //todo: Why not just create multiple independent shapes for the bird?
-    private Group player; // bird composed of shapes
-    private double velocity = 0;
-    //tod: Why not just a Arraylist<Rectangle> for pipes?
-    private final ArrayList<Rectangle[]> pipes = new ArrayList<>();
-    private Text scoreText;
-    private int score = 0;
-    private final Random rand = new Random();
     private boolean running = true;
+    private boolean hasJumpedOnce = false;
 
-    // loop state
+    // ---- Pipes + Random ----
+    private final ArrayList<Rectangle[]> pipes = new ArrayList<>();
+    private final Random rand = new Random();
+
+    // ---- Game Loop Timing ----
     private long prevTime = 0;
     private double accumulator = 0.0;
     private double spawnTimer = SPAWN_INTERVAL;
 
-    private AuthenticationScreen authScreen;
-    //todo: should default be emtpy isntead of guest - or boolean or so
-    private String loggedInUsername = "guest";
-    private String loggedInPassword;
+    // ---- Audio ----
+//    private MediaPlayer deathSound;
+//    private MediaPlayer swingSound;
 
 
+    /* =========================================================
+     *  JAVAFX ENTRY POINT
+     * ========================================================= */
     @Override
     public void start(Stage primaryStage) {
-        httpClientGame = new HttpClientGame("https://pedicellate-overvaliant-rosette.ngrok-free.dev/api");
+        httpClientGame = new HttpClientGame("https://api.myveryownhomenetwork.site/api");
         authScreen = new AuthenticationScreen(httpClientGame);
-        //todo: how does this lambda work here?
+
         authScreen.show(primaryStage, () -> startGame(primaryStage));
-        //todo: make register and login more clear (that they are buttons)
     }
+
+
+    /* =========================================================
+     *  GAME INITIALIZATION
+     * ========================================================= */
     private void startGame(Stage primaryStage) {
-        System.out.println("start");
-        System.out.flush();
-        //todo: how does login after register work?
-        //todo: at first launch game shouldn't immediately run
-        //todo: new game starts with enter not space
 
         loggedInUsername = authScreen.getCurrentUsername();
         loggedInPassword = authScreen.getCurrentPassword();
+        logger.info("logging works with user: " + loggedInUsername);
 
-        //retrieving highscore at start of game - closing and opening the application would otherwise reset it to 0
         if (!loggedInUsername.equals("guest")) {
             try {
+                logger.info("updating highscore variable");
                 highscore = httpClientGame.getUserHighScore(loggedInUsername);
+                logger.info("highscore: " + highscore);
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -94,28 +111,23 @@ public class FlappyBirdGame extends Application {
         root = new Pane();
         root.setPrefSize(WIDTH, HEIGHT);
 
-        // Background sky gradient
-        //todo: why not just a colored rectangle?
-        Stop[] stops = new Stop[]{
-                new Stop(0, Color.web("#87CEEB")), // light sky blue
-                new Stop(1, Color.web("#BFE9FF"))  // pale
-        };
+        // Sky gradient
         Rectangle sky = new Rectangle(WIDTH, HEIGHT);
-        sky.setFill(new LinearGradient(0, 0, 0, 1, true, CycleMethod.NO_CYCLE, stops));
+        sky.setFill(new LinearGradient(0, 0, 0, 1, true, CycleMethod.NO_CYCLE,
+                new Stop(0, Color.web("#87CEEB")), new Stop(1, Color.web("#BFE9FF"))));
 
-        // Ground strip
-        //todo: why not just a colored rectangle?
+        // Ground
         Rectangle ground = new Rectangle(0, HEIGHT - 60, WIDTH, 60);
         ground.setFill(new LinearGradient(0, 0, 0, 1, true, CycleMethod.NO_CYCLE,
                 new Stop(0, Color.web("#5DB85D")), new Stop(1, Color.web("#3A8A3A"))));
         ground.setStroke(Color.web("#2E7D2E"));
 
-        // Create a composed bird (Group) with body, eye, beak
+        // Bird
         player = createBird();
-        //todo: why extra modification needed after createBird?
         player.setTranslateX(100);
         player.setTranslateY(HEIGHT / 2);
 
+        // Score Text
         scoreText = new Text("0");
         scoreText.setFont(Font.font("Arial", FontWeight.BOLD, 30));
         scoreText.setFill(Color.WHITE);
@@ -124,82 +136,91 @@ public class FlappyBirdGame extends Application {
         scoreText.setTranslateY(40);
         scoreText.setTextOrigin(VPos.TOP);
 
-        // Add children in back-to-front order
-        root.getChildren().addAll(sky, ground, player, scoreText);
+        // Start Hint
+        Text startHint = new Text(WIDTH / 2 - 100, HEIGHT / 2 - 100, "Press SPACE to Start");
+        startHint.setFont(Font.font("Arial", FontWeight.BOLD, 24));
+        startHint.setX(WIDTH / 2 - startHint.getBoundsInLocal().getWidth() / 2);
+        startHint.setFill(Color.WHITE);
+        startHint.setStroke(Color.BLACK);
 
         Scene scene = new Scene(root);
-        scene.setOnKeyPressed(e -> {
-            //todo: is this hardware agnostic?
-            if (e.getCode() == KeyCode.SPACE) {
-                if (running) jump();
-                else restart();
-            }
-        });
-
         primaryStage.setScene(scene);
         primaryStage.setTitle("Ferdi's Bird");
         primaryStage.setResizable(false);
-        //todo: without this nothing is shown?
         primaryStage.show();
 
+//        loadSounds();
+
+        root.getChildren().addAll(sky, ground, player, scoreText, startHint);
+
+        scene.setOnKeyPressed(e -> {
+            if (e.getCode() == KeyCode.SPACE) {
+                if (running) {
+                    if (!hasJumpedOnce) {
+                        root.getChildren().remove(startHint);
+                        hasJumpedOnce = true;
+                    }
+                    jump();
+                } else {
+                    restart();
+                    root.getChildren().add(startHint);
+                    hasJumpedOnce = false;
+                }
+            }
+        });
+
+        // Main loop
         AnimationTimer loop = new AnimationTimer() {
             @Override
             public void handle(long now) {
-                //todo: where is now coming from
-                if (prevTime == 0) { // initialize to avoid huge initial dt
+                if (prevTime == 0) {
                     prevTime = now;
                     return;
                 }
 
                 if (!running) {
-                    prevTime = now; // keep timers in sync while paused
+                    prevTime = now;
                     return;
                 }
 
                 double frameDt = (now - prevTime) / 1_000_000_000.0;
                 prevTime = now;
 
-                // clamp large frame times (e.g., after pause or window drag)
-                //todo: what does this do
                 frameDt = Math.min(frameDt, MAX_ACCUM);
                 accumulator += frameDt;
 
-                // run fixed-size physics steps
-                //todo: what does this do
                 while (accumulator >= FIXED_DT) {
-                    physicsUpdate(FIXED_DT);
+                    physicsUpdate();
                     accumulator -= FIXED_DT;
                 }
 
-                // update score position (keep centered)
                 scoreText.setTranslateX(WIDTH / 2 - scoreText.getLayoutBounds().getWidth() / 2);
             }
         };
-        //todo: why does it start the loop here? -> shouldnt it start before the physic loop logic
         loop.start();
     }
 
-    // create a small bird using shapes and gradients
+
+    /* =========================================================
+     *  RENDERING HELPERS
+     * ========================================================= */
     private Group createBird() {
-        //todo: check how these shapes look like
-        // body with radial gradient
         RadialGradient bodyGrad = new RadialGradient(0, 0.1, 0.2, 0.2, 1, true, CycleMethod.NO_CYCLE,
                 new Stop(0, Color.web("#FFD36E")), new Stop(1, Color.web("#FF9A2E")));
+
         Circle body = new Circle(PLAYER_RADIUS);
         body.setFill(bodyGrad);
         body.setEffect(new DropShadow(6, Color.gray(0, 0.4)));
 
-        // eye
         Circle eyeWhite = new Circle(PLAYER_RADIUS * 0.28, Color.WHITE);
         eyeWhite.setTranslateX(PLAYER_RADIUS * 0.45);
         eyeWhite.setTranslateY(-PLAYER_RADIUS * 0.3);
+
         Circle pupil = new Circle(PLAYER_RADIUS * 0.12, Color.BLACK);
         pupil.setTranslateX(PLAYER_RADIUS * 0.55);
         pupil.setTranslateY(-PLAYER_RADIUS * 0.3);
 
-        // beak (triangle)
-        Polygon beak = new Polygon();
-        beak.getPoints().addAll(
+        Polygon beak = new Polygon(
                 PLAYER_RADIUS * 0.8, 0.0,
                 PLAYER_RADIUS * 1.4, -PLAYER_RADIUS * 0.18,
                 PLAYER_RADIUS * 1.4, PLAYER_RADIUS * 0.18
@@ -207,48 +228,55 @@ public class FlappyBirdGame extends Application {
         beak.setFill(Color.web("#FFB347"));
         beak.setEffect(new DropShadow(4, Color.gray(0, 0.35)));
 
-        Group bird = new Group(body, eyeWhite, pupil, beak);
-        bird.setRotate(0);
-        return bird;
+        return new Group(body, eyeWhite, pupil, beak);
     }
 
-    private void physicsUpdate(double dt) {
-        // Apply gravity and integrate position
-        velocity += GRAVITY * dt;
-        player.setTranslateY(player.getTranslateY() + velocity * dt);
 
-        // tilt bird based on velocity (smooth clamp)
-        double angle = Math.max(-25, Math.min(90, velocity / 6)); // simple mapping
+    /* =========================================================
+     *  GAME LOOP / PHYSICS
+     * ========================================================= */
+    private void physicsUpdate() {
+        if (!hasJumpedOnce) return;
+
+        double gravity = 1000.0;
+
+        velocity += gravity * FIXED_DT;
+        player.setTranslateY(player.getTranslateY() + velocity * FIXED_DT);
+
+        double angle = Math.max(-25, Math.min(90, velocity / 6));
         player.setRotate(angle);
 
-        // Spawn logic using a timer in seconds (deterministic with fixed steps)
-        spawnTimer -= dt;
+        spawnTimer -= FIXED_DT;
         if (spawnTimer <= 0) {
             spawnPipes();
             spawnTimer += SPAWN_INTERVAL;
         }
 
-        // Move pipes and handle scoring/collision/removal
         Iterator<Rectangle[]> it = pipes.iterator();
         while (it.hasNext()) {
             Rectangle[] pair = it.next();
-            Rectangle top = pair[0], bottom = pair[1];
+            Rectangle top = pair[0];
+            Rectangle bottom = pair[1];
 
-            double dx = SCROLL_SPEED * dt;
+            double scrollSpeed = 200.0;
+            double dx = scrollSpeed * FIXED_DT;
             top.setTranslateX(top.getTranslateX() - dx);
             bottom.setTranslateX(bottom.getTranslateX() - dx);
 
-            if (!top.getProperties().containsKey("scored") && top.getTranslateX() + top.getWidth() < player.getTranslateX()) {
+            if (!top.getProperties().containsKey("scored")
+                    && top.getTranslateX() + top.getWidth() < player.getTranslateX()) {
+
                 top.getProperties().put("scored", true);
                 score++;
                 scoreText.setText(String.valueOf(score));
             }
 
-            // replace bounding-box intersects with circle-vs-rect collision to avoid false positives
             double cx = player.getTranslateX();
             double cy = player.getTranslateY();
-            double collisionRadius = PLAYER_RADIUS * HITBOX_SCALE; // use constant for easier tuning
-            if (circleIntersectsRect(cx, cy, collisionRadius, top) || circleIntersectsRect(cx, cy, collisionRadius, bottom)) {
+            double r = PLAYER_RADIUS * HITBOX_SCALE;
+
+            if (circleIntersectsRect(cx, cy, r, top) ||
+                    circleIntersectsRect(cx, cy, r, bottom)) {
                 gameOver();
             }
 
@@ -258,43 +286,18 @@ public class FlappyBirdGame extends Application {
             }
         }
 
-        // Ground / ceiling collision using PLAYER_RADIUS
-        if (player.getTranslateY() - PLAYER_RADIUS < 0 || player.getTranslateY() + PLAYER_RADIUS > HEIGHT - 60) {
+        if (player.getTranslateY() - PLAYER_RADIUS < 0 ||
+                player.getTranslateY() + PLAYER_RADIUS > HEIGHT - 60) {
             gameOver();
         }
     }
 
-    // circle (cx,cy,r) vs axis-aligned rectangle collision
-    private boolean circleIntersectsRect(double cx, double cy, double r, Rectangle rect) {
-        double rx = rect.getTranslateX();
-        double ry = rect.getTranslateY();
-        double rw = rect.getWidth();
-        double rh = rect.getHeight();
-
-        // find closest point on rect to circle center
-        double closestX = clamp(cx, rx, rx + rw);
-        double closestY = clamp(cy, ry, ry + rh);
-
-        double dx = cx - closestX;
-        double dy = cy - closestY;
-        return dx * dx + dy * dy <= r * r;
-    }
-
-    private double clamp(double v, double a, double b) {
-        return Math.max(a, Math.min(b, v));
-    }
-
-    private void jump() {
-        velocity = JUMP_VELOCITY;
-    }
-
     private void spawnPipes() {
-        double gap = 120; // reduced from 150 for tighter challenge
+        double gap = 120;
         double minY = 80;
-        double maxY = HEIGHT - 80 - gap - 60; // avoid ground area
+        double maxY = HEIGHT - 80 - gap - 60;
         double y = minY + rand.nextDouble() * Math.max(0, (maxY - minY));
 
-        // rounded pipe rectangles with gradient and shadow
         Rectangle top = new Rectangle(60, y);
         top.setArcWidth(14);
         top.setArcHeight(14);
@@ -314,14 +317,51 @@ public class FlappyBirdGame extends Application {
         bottom.setEffect(new DropShadow(8, Color.gray(0, 0.35)));
 
         pipes.add(new Rectangle[]{top, bottom});
-        // insert pipes above ground but below player and UI
+
         int insertIndex = Math.max(2, root.getChildren().size() - 2);
         root.getChildren().add(insertIndex, top);
         root.getChildren().add(insertIndex + 1, bottom);
     }
 
+    private void jump() {
+//        if (swingSound != null) {
+//            swingSound.stop();
+//            swingSound.play();
+//        }
+        velocity = -350.0;
+    }
+
+    private boolean circleIntersectsRect(double cx, double cy, double r, Rectangle rect) {
+        double rx = rect.getTranslateX();
+        double ry = rect.getTranslateY();
+        double rw = rect.getWidth();
+        double rh = rect.getHeight();
+
+        double closestX = clamp(cx, rx, rx + rw);
+        double closestY = clamp(cy, ry, ry + rh);
+
+        double dx = cx - closestX;
+        double dy = cy - closestY;
+
+        return dx * dx + dy * dy <= r * r;
+    }
+
+    private double clamp(double v, double min, double max) {
+        return Math.max(min, Math.min(max, v));
+    }
+
+
+    /* =========================================================
+     *  GAME STATE (GAME OVER / RESTART)
+     * ========================================================= */
     private void gameOver() {
+//        if (deathSound != null) {
+//            deathSound.stop();
+//            deathSound.play();
+//        }
+
         running = false;
+
         Text go = new Text(WIDTH / 2 - 120, HEIGHT / 2 - 170, "Game Over\nPress Space to restart");
         go.setFont(Font.font("Arial", FontWeight.BOLD, 24));
         go.setFill(Color.WHITE);
@@ -329,27 +369,30 @@ public class FlappyBirdGame extends Application {
         go.setEffect(new DropShadow(6, Color.gray(0, 0.6)));
         root.getChildren().add(go);
 
-        if (score >  highscore) {
+        if (score > highscore) {
             highscore = score;
+
             if (!loggedInUsername.equals("guest")) {
                 try {
+                    logger.info("submitting new highscore");
                     httpClientGame.submitScore(loggedInUsername, loggedInPassword, highscore);
+                    logger.info("submitted highscore with value " + highscore);
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
             }
         }
 
-        //display of leaderboard
+        // Leaderboard Display
         if (!loggedInUsername.equals("guest")) {
             try {
-                Object raw = httpClientGame.getLeaderboard(); // expected to be a List of 3 entries
-                if (raw instanceof java.util.List) {
-                    java.util.List<?> list = (java.util.List<?>) raw;
+                Object raw = httpClientGame.getLeaderboard();
+                logger.info("leaderboard raw: " + raw);
+
+                if (raw instanceof java.util.List<?> list) {
                     double startX = WIDTH / 2 - 120;
                     double startY = HEIGHT / 2 + 30;
 
-                    // Add table header
                     Text header = new Text(startX, startY + 20, "RANKING");
                     header.setFont(Font.font("Arial", FontWeight.BOLD, 22));
                     header.setFill(Color.GOLD);
@@ -363,8 +406,7 @@ public class FlappyBirdGame extends Application {
                         String name = null;
                         Integer userScore = null;
 
-                        if (item instanceof java.util.Map) {
-                            java.util.Map<?, ?> map = (java.util.Map<?, ?>) item;
+                        if (item instanceof Map<?, ?> map) {
                             Object n = map.get("username");
                             if (n == null) n = map.get("name");
                             if (n == null) n = map.get("user");
@@ -373,29 +415,71 @@ public class FlappyBirdGame extends Application {
                             Object s = map.get("highScore");
                             if (s == null) s = map.get("score");
                             if (s == null) s = map.get("points");
-                            if (s instanceof Number) userScore = ((Number) s).intValue();
-                            else if (s != null) {
+
+                            if (s instanceof Number) {
+                                userScore = ((Number) s).intValue();
+                            } else if (s != null) {
                                 try {
                                     userScore = Integer.parseInt(String.valueOf(s).trim().replaceAll("\\D", ""));
-                                } catch (Exception ignored) {
-                                }
+                                } catch (Exception ignored) { }
                             }
                         }
-                        System.out.println("adding own score");
+
+                        logger.info("Leaderboard entry: " + (i + 1) + ". " + name + " - " + userScore);
+
                         double rowY = startY + 50 + (i * 25);
-                        addLeaderboardRow(startX, rowY, String.valueOf(i + 1) + ".", name, userScore);
+                        addLeaderboardRow(startX, rowY, (i + 1) + ".", name, userScore);
                     }
                 }
             } catch (Exception e) {
                 e.printStackTrace();
             }
         }
-        //add own highscore below the list
-        //todo: what does this number mean
+
         double ownRowY = (HEIGHT / 2 + 30) + 135;
         addLeaderboardRow(WIDTH / 2 - 120, ownRowY, "-", "Youre Best", highscore);
     }
 
+
+    private void restart() {
+        root.getChildren().clear();
+        pipes.clear();
+
+        player = createBird();
+        player.setTranslateX(100);
+        player.setTranslateY(HEIGHT / 2);
+
+        velocity = 0;
+        score = 0;
+        scoreText.setText(String.valueOf(score));
+        scoreText.setTranslateX(WIDTH / 2 - scoreText.getLayoutBounds().getWidth() / 2);
+
+        root.getChildren().addAll(
+                new Rectangle(WIDTH, HEIGHT, new LinearGradient(0, 0, 0, 1, true,
+                        CycleMethod.NO_CYCLE, new Stop(0, Color.web("#87CEEB")),
+                        new Stop(1, Color.web("#BFE9FF")))),
+
+                new Rectangle(0, HEIGHT - 60, WIDTH, 60) {{
+                    setFill(new LinearGradient(0, 0, 0, 1, true, CycleMethod.NO_CYCLE,
+                            new Stop(0, Color.web("#5DB85D")), new Stop(1, Color.web("#3A8A3A"))));
+                    setStroke(Color.web("#2E7D2E"));
+                }},
+
+                player,
+                scoreText
+        );
+
+        running = true;
+
+        prevTime = 0;
+        accumulator = 0.0;
+        spawnTimer = SPAWN_INTERVAL;
+    }
+
+
+    /* =========================================================
+     *  LEADERBOARD UI
+     * ========================================================= */
     private void addLeaderboardRow(double x, double y, String rank, String name, Integer score) {
         Text rankText = new Text(x + 5, y, rank);
         rankText.setFont(Font.font("Arial", FontWeight.BOLD, 18));
@@ -421,40 +505,31 @@ public class FlappyBirdGame extends Application {
         root.getChildren().add(scoreTextNode);
     }
 
-    private void restart() {
-        root.getChildren().clear();
-        pipes.clear();
-        player = createBird();
-        player.setTranslateX(100);
-        player.setTranslateY(HEIGHT / 2);
-        velocity = 0;
-        score = 0;
-        scoreText.setText(String.valueOf(score));
-        scoreText.setTranslateX(WIDTH / 2 - scoreText.getLayoutBounds().getWidth() / 2);
-        root.getChildren().addAll(
-                // recreate background and ground and player and score (simple rebuild)
-                new Rectangle(WIDTH, HEIGHT, new LinearGradient(0, 0, 0, 1, true, CycleMethod.NO_CYCLE,
-                        new Stop(0, Color.web("#87CEEB")), new Stop(1, Color.web("#BFE9FF")))),
-                new Rectangle(0, HEIGHT - 60, WIDTH, 60) {{
-                    setFill(new LinearGradient(0, 0, 0, 1, true, CycleMethod.NO_CYCLE,
-                            new Stop(0, Color.web("#5DB85D")), new Stop(1, Color.web("#3A8A3A"))));
-                    setStroke(Color.web("#2E7D2E"));
-                }},
-                player,
-                scoreText
-        );
-        running = true;
 
-        // reset loop state
-        prevTime = 0;
-        accumulator = 0.0;
-        spawnTimer = SPAWN_INTERVAL;
-    }
-
-    public static void main(String[] args) {
-        setupLogging();
-        launch(args);
-    }
+    /* =========================================================
+     *  UTILITY
+     * ========================================================= */
+//    private void loadSounds() {
+//        try {
+//            Media hit = new Media(Objects.requireNonNull(
+//                    getClass().getResource("/sounds/death.wav")).toExternalForm());
+//            deathSound = new MediaPlayer(hit);
+//            deathSound.setOnEndOfMedia(() -> deathSound.stop());
+//        } catch (Exception e) {
+//            System.err.println("Could not load death sound!");
+//            e.printStackTrace();
+//        }
+//
+//        try {
+//            Media swing = new Media(Objects.requireNonNull(
+//                    getClass().getResource("/sounds/swing.wav")).toExternalForm());
+//            swingSound = new MediaPlayer(swing);
+//            swingSound.setOnEndOfMedia(() -> swingSound.stop());
+//        } catch (Exception e) {
+//            System.err.println("Could not load swing sound!");
+//            e.printStackTrace();
+//        }
+//    }
 
     private static void setupLogging() {
         try {
@@ -466,9 +541,18 @@ public class FlappyBirdGame extends Application {
                     new java.io.PrintStream(new java.io.FileOutputStream(logFile, true), true, "UTF-8");
             System.setOut(logStream);
             System.setErr(logStream);
-            System.out.println("==== Application Started ====");
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
+
+
+    /* =========================================================
+     *  MAIN
+     * ========================================================= */
+    public static void main(String[] args) {
+        setupLogging();
+        launch(args);
+    }
 }
+

@@ -13,13 +13,13 @@ import java.time.Instant;
 import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
-
+import java.util.stream.StreamSupport;
 @RestController
 @RequestMapping("/api")
-public class LeaderboardController {
+public class ApiController {
     private final UserRepository repo;
 
-    public LeaderboardController(UserRepository repo) {
+    public ApiController(UserRepository repo) {
         this.repo = repo;
     }
 
@@ -65,7 +65,7 @@ public class LeaderboardController {
 
     @GetMapping("/leaderboard")
     public List<LeaderboardEntry> leaderboard() {
-        return repo.findAll().stream()
+        return StreamSupport.stream(repo.findAll().spliterator(), false)
                 .sorted(Comparator.comparingInt(org.example.apiservice.model.User::getHighScore).reversed())
                 .limit(3)
                 .map(u -> new LeaderboardEntry(u.getUsername(), u.getHighScore()))
